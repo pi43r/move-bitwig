@@ -1,0 +1,10 @@
+{
+    "id": "controller",
+    "name": "Bitwig Controller",
+    "version": "0.1.0",
+    "description": "Custom MIDI controller for Bitwig Studio",
+    "author": "pi43r",
+    "ui": "ui.js",
+    "api_version": 1,
+    "component_type": "overtake"
+}
