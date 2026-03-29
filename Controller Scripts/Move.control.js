@@ -23,6 +23,7 @@ load("MoveDisplay.js");
 load("MoveTransport.js");
 load("MoveGrid.js");
 load("MoveNavigation.js");
+load("MoveTrackControls.js");
 
 // Global states
 var midiIn = null;
@@ -41,6 +42,7 @@ function init() {
     MoveTransport.init(host);
     MoveNavigation.init(host); // Navigation creates trackBank/cursorTrack
     MoveGrid.init(host, MoveNavigation.trackBank);
+    MoveTrackControls.init(host, MoveNavigation.cursorTrack, MoveNavigation.trackBank.sceneBank());
 
     // Initial Display Update
     MoveDisplay.sendText(1, "Bitwig Move", midiOut);
@@ -51,23 +53,30 @@ function init() {
 }
 
 function onMidi0(status, data1, data2) {
-    // 1. Handle Shift key globally
-    if (data1 === MoveHardware.CC.SHIFT) {
+    var msgType = status & 0xF0;
+
+    // 1. Handle Shift key globally (CC 49)
+    if (msgType === 0xB0 && data1 === MoveHardware.CC.SHIFT) {
         shiftDown = (data2 > 64);
         return;
     }
 
-    // 2. Delegate to Transport
-    if (MoveTransport.handleCC(data1, data2)) return;
-
-    // 3. Delegate to Grid (Pads) or Navigation (Touch)
-    if (data1 >= 0 && data1 <= 9) {
-        if (MoveNavigation.handleTouch(status, data1, data2)) return;
+    // 2. Delegate to CC handlers (Transport, Track Controls, Navigation)
+    if (msgType === 0xB0) {
+        if (MoveTransport.handleCC(data1, data2)) return;
+        if (MoveTrackControls.handleCC(data1, data2, shiftDown)) return;
+        if (MoveNavigation.handleCC(data1, data2, shiftDown)) return;
     }
-    if (MoveGrid.handleNote(status, data1, data2)) return;
 
-    // 4. Delegate to Navigation (Arrows, Knobs, Selection)
-    if (MoveNavigation.handleCC(data1, data2, shiftDown)) return;
+    // 3. Delegate to Note handlers (Grid, Knob Touch)
+    if (msgType === 0x90 || msgType === 0x80) {
+        // Knob touches use low notes 0-9
+        if (data1 >= 0 && data1 <= 9) {
+            if (MoveNavigation.handleTouch(status, data1, data2)) return;
+        }
+        // Grid pads
+        if (MoveGrid.handleNote(status, data1, data2, shiftDown)) return;
+    }
 
     // println("Unhandled MIDI: " + status + " " + data1 + " " + data2);
 }
@@ -80,6 +89,7 @@ function flush() {
     // Update LEDs and Display from modules
     MoveTransport.updateLEDs(midiOut);
     MoveGrid.updateLEDs(midiOut);
+    MoveTrackControls.updateLEDs(midiOut);
     MoveNavigation.updateDisplay(midiOut);
 }
 

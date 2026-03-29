@@ -15,33 +15,73 @@ The controller is currently functional for transport, navigation, device control
 #### ✅ Implemented
 - **Infrastructure**
   - [x] Bidirectional MIDI communication bridge.
+  - [x] **Middleman CC Bridge**: Custom virtual CCs (100-107) for LED feedback to terminate feedback loops.
   - [x] Custom Text-over-CC OLED protocol (4 lines of text).
-  - [x] Middleman CC LED feedback (Physical button sync).
-- **Transport**
-  - [x] Play / Stop toggle.
-  - [x] Arranger Record toggle.
-  - [x] Real-time LED feedback for Play (Green) and Record (Red).
-- **Navigation**
+  - [x] Color Engine: Match Bitwig colors to Move's 128-color hardware palette.
+- **Transport & Global**
+  - [x] Play / Pause toggle.
+  - [x] Arranger Record toggle (**REC** button).
+  - [x] Real-time LED feedback: Play (Green), Global Rec (Red).
+- **Track Controls**
+  - [x] **Mute / Solo**: Dedicated `MUTE` button toggles mute; `Shift + Mute` toggles Solo.
+  - [x] **Record Arm**: **Sample** button (CC 118) toggles track arm with RGB LED feedback.
+  - [x] **Stop Clip**: Hold `Shift + Pad` to stop the clip in that cell.
+- **Navigation & Launcher**
+  - [x] **Scene Launching**: Track Selector buttons 1-4 launch scenes 1-4.
   - [x] Track Bank scrolling (8 tracks at a time) via Left/Right arrows.
   - [x] Scene Bank scrolling (4 scenes at a time) via Up/Down arrows.
   - [x] Device Selection via `Shift + Left/Right`.
+  - [x] 8x4 Grid (32 Pads) mapped to Bitwig Clip Launcher.
 - **Device & Parameters**
   - [x] Automatic mapping of 8 Remote Controls to Move Knobs.
   - [x] **Capacitive Touch**: Touching a knob immediately focuses the parameter on the OLED.
   - [x] Real-time parameter name and value display.
   - [x] Master Volume control via the **Master Knob** (physical 9th knob).
-- **Clip Launcher**
-  - [x] 8x4 Grid (32 Pads) mapped to Bitwig Clip Launcher.
-  - [x] **RGB Mapping**: Bitwig clip colors accurately mapped to Move's internal 128-color palette.
-  - [x] Launch / Record clips with physical pad presses.
 
 #### 🏗️ In Progress / Planned
-- [ ] **Track Controls**: Mute, Solo, and Stop Clip (`Shift + Pad`).
 - [ ] **Navigation & Selection**: Use the **Jog Wheel** for scrolling through tracks/scenes and clicking to select.
 - [ ] **Note Modes**: Isomorphic Piano layout and 4x4 Drum Rack mode.
 - [ ] **Step Sequencer**: Full Bitwig step sequencing via the 16 step buttons.
 - [ ] **Advanced UI**: Graphical meters (Peak/RMS) and Volume/Pan visualizers on OLED.
 - [ ] **Menu System**: `Shift + Menu` for hardware settings (Velocity curve, MIDI channel).
+
+## Control Reference
+
+### Transport & Global
+| Control | Action | LED Feedback |
+| :--- | :--- | :--- |
+| **PLAY** | Toggle Play / Pause | Green = Playing |
+| **REC** | Toggle Arranger Record | Red = Recording |
+| **Shift + Menu** | (Planned) Hardware Settings | |
+
+### Track Controls (Selected Track)
+| Control | Action | LED Feedback |
+| :--- | :--- | :--- |
+| **MUTE** | Toggle Mute | White = Muted / Soloed |
+| **Shift + MUTE** | Toggle Solo | White = Muted / Soloed |
+| **Sample** | Toggle Record Arm | Red = Armed |
+| **Master Knob** | Master Volume | |
+
+### Clip Launcher & Scenes
+| Control | Action | LED Feedback |
+| :--- | :--- | :--- |
+| **Pads (8x4)** | Launch or Record Clips | RGB (Matches Bitwig) |
+| **Shift + Pad** | Stop Clip in slot | |
+| **Track Sel 1-4**| Launch Scene 1-4 | RGB (Matches Scene color) |
+
+### Navigation
+| Control | Action |
+| :--- | :--- |
+| **Left / Right** | Scroll Track Bank (8 tracks) |
+| **Up / Down** | Scroll Scene Bank (4 scenes) |
+| **Shift + L / R** | Select Previous / Next Device |
+| **Jog Wheel** | (Planned) Scroll through tracks/scenes |
+
+### Device & Parameters
+| Control | Action | Display Feedback |
+| :--- | :--- | :--- |
+| **Knobs 1-8** | Adjust Remote Controls | Parameter Value |
+| **Knob Touch** | Focus Parameter | Parameter Name & Value |
 
 ## Installation
 

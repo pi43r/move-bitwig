@@ -24,7 +24,7 @@ var MoveTransport = {
     /**
      * Handle physical CC input (Called from onMidi0)
      */
-    handleCC: function(cc, value) {
+    handleCC: function (cc, value, shiftDown) {
         if (value === 127) { // Only react to PUSH
             if (cc === MoveHardware.CC.PLAY) {
                 this.transport.isPlaying().toggle();

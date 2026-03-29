@@ -61,7 +61,7 @@ var MoveGrid = {
     /**
      * Handle physical Note input (Called from onMidi0)
      */
-    handleNote: function (status, note, velocity) {
+    handleNote: function (status, note, velocity, shiftDown) {
         var isNoteOn = (status & 0xF0) === 0x90 && velocity > 0;
         if (!isNoteOn) return false;
 
@@ -70,7 +70,12 @@ var MoveGrid = {
             if (velocity > 1) {
                 var cell = MoveHardware.getPadCoordinate(note);
                 if (cell) {
-                    this.trackBank.getItemAt(cell.track).clipLauncherSlotBank().getItemAt(cell.scene).launch();
+                    var slot = this.trackBank.getItemAt(cell.track).clipLauncherSlotBank().getItemAt(cell.scene);
+                    if (shiftDown) {
+                        slot.stop();
+                    } else {
+                        slot.launch();
+                    }
                     return true;
                 }
             }

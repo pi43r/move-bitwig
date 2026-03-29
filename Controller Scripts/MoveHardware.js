@@ -22,7 +22,12 @@ var MoveHardware = {
         DELETE: 119,
         CAPTURE: 52,
         MENU: 50,
-        BACK: 51
+        BACK: 51,
+        TRACK_SELECT_1: 43,
+        TRACK_SELECT_2: 42,
+        TRACK_SELECT_3: 41,
+        TRACK_SELECT_4: 40,
+        SAMPLE: 118
     },
 
     // Note constants

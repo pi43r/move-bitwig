@@ -32,7 +32,7 @@ const CONTROLS = {
         MoveShift, MoveMainKnob, MoveUp, MoveDown,
         MoveMaster, MoveKnob1, MoveKnob1 + 1, MoveKnob1 + 2, MoveKnob1 + 3,
         MoveKnob1 + 4, MoveKnob1 + 5, MoveKnob1 + 6, MoveKnob8,
-        85, 86 // Play, Rec buttons
+        85, 86, 88, 43, 42, 41, 40, 118 // Play, Rec, Mute, Track Selectors, Sample
     ],
     NOTES: [
         ...MovePads,
@@ -41,8 +41,14 @@ const CONTROLS = {
     ],
     // Virtual CC Mapping for Middleman Bridge
     BRIDGE: {
-        100: 85, // Virtual Play -> Physical 85
-        101: 86  // Virtual Rec -> Physical 86
+        100: 85,   // Virtual Play -> Physical 85
+        101: 86,   // Virtual Rec -> Physical 86 (Transport Rec)
+        102: 88,   // Mute
+        103: 43,   // Track 1
+        104: 42,   // Track 2
+        105: 41,   // Track 3
+        106: 40,   // Track 4
+        107: 118  // Record Arm -> Note 118 (Sample RGB Ring)
     }
 };
 
@@ -76,9 +82,11 @@ globalThis.onMidiMessageExternal = function (data) {
         const b2 = raw[2];
 
         if (status === MidiCC) {
-            // 1. Middleman Bridge Translation
-            if (CONTROLS.BRIDGE[b1]) {
-                setButtonLED(CONTROLS.BRIDGE[b1], b2);
+            // 1. Middleman Bridge Translation (Handles CC results or Note results [1000+n])
+            const target = CONTROLS.BRIDGE[b1];
+            if (target) {
+                if (target >= 1000) setLED(target - 1000, b2); // Note feedback
+                else setButtonLED(target, b2);                // CC feedback
                 return;
             }
 
