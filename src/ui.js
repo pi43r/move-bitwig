@@ -37,7 +37,7 @@ const CONTROLS = {
     NOTES: [
         ...MovePads,
         ...MoveSteps,
-        0, 1, 2, 3, 4, 5, 6, 7 // Knob touches
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9 // Knob touches
     ],
     // Virtual CC Mapping for Middleman Bridge
     BRIDGE: {
@@ -127,7 +127,7 @@ globalThis.onMidiMessageInternal = function (data) {
         const d2 = raw[2];
 
         if (isCapacitiveTouchMessage(raw)) {
-            move_midi_external_send([2 << 4 | (raw[0] & 0x0F), raw[0], raw[1], raw[2]]);
+            move_midi_external_send([2 << 4 | (raw[0] >> 4), raw[0], raw[1], raw[2]]);
             return;
         }
 

@@ -28,7 +28,7 @@ var MoveHardware = {
     // Note constants
     NOTES: {
         TOUCH_KNOB_FIRST: 0,
-        TOUCH_KNOB_LAST: 7,
+        TOUCH_KNOB_LAST: 9,
         STEP_FIRST: 16,
         STEP_LAST: 31,
         PAD_FIRST: 68,

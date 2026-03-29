@@ -61,7 +61,7 @@ function onMidi0(status, data1, data2) {
     if (MoveTransport.handleCC(data1, data2)) return;
 
     // 3. Delegate to Grid (Pads) or Navigation (Touch)
-    if (data1 >= 0 && data1 <= 7) {
+    if (data1 >= 0 && data1 <= 9) {
         if (MoveNavigation.handleTouch(status, data1, data2)) return;
     }
     if (MoveGrid.handleNote(status, data1, data2)) return;

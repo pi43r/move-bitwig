@@ -19,6 +19,8 @@ var MoveNavigation = {
 
         // Observers for OLED metadata
         this.cursorTrack.name().markInterested();
+        this.cursorTrack.volume().name().markInterested();
+        this.cursorTrack.volume().value().displayedValue().markInterested();
         this.cursorDevice.name().markInterested();
         
         for (var i = 0; i < 8; i++) {
@@ -94,19 +96,25 @@ var MoveNavigation = {
     },
 
     /**
-     * Handle Knob touches (Note 0-7)
+     * Handle Knob touches (Note 0-9)
      */
     handleTouch: function(status, note, velocity) {
-        if (note >= 0 && note <= 7) {
+        if (note >= 0 && note <= 9) {
             var isPress = ((status & 0xF0) === 0x90 && velocity > 0);
             
-            println("Touch Note: " + note + " Status: " + status + " Vel: " + velocity + " isPress: " + isPress);
-            
             if (isPress) {
-                this.activeParameter = this.remoteControls.getParameter(note);
-            } else {
-                this.activeParameter = null;
+                if (note >= 0 && note <= 7) {
+                    this.activeParameter = this.remoteControls.getParameter(note);
+                } else if (note === 8) {
+                    this.activeParameter = this.cursorTrack.volume();
+                }
+                
+                // Trigger immediate update when touched
+                if (typeof midiOut !== 'undefined') {
+                    this.updateDisplay(midiOut);
+                }
             }
+            // Note: We don't clear activeParameter on release ("it should stay")
             return true;
         }
         return false;

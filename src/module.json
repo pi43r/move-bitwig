@@ -8,5 +8,5 @@
     "api_version": 1,
     "component_type": "overtake",
     "claims_master_knob": true,
-    "raw_midi": false
+    "raw_midi": true
 }
