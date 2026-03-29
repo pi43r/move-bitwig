@@ -29,6 +29,7 @@ load("MoveTrackControls.js");
 var midiIn = null;
 var midiOut = null;
 var shiftDown = false;
+var deleteDown = false;
 
 function init() {
     // MIDI Configuration
@@ -61,6 +62,12 @@ function onMidi0(status, data1, data2) {
         return;
     }
 
+    // 1b. Handle Delete key globally (CC 119)
+    if (msgType === 0xB0 && data1 === MoveHardware.CC.DELETE) {
+        deleteDown = (data2 > 64);
+        return;
+    }
+
     // 2. Delegate to CC handlers (Transport, Track Controls, Navigation)
     if (msgType === 0xB0) {
         if (MoveTransport.handleCC(data1, data2)) return;
@@ -75,7 +82,7 @@ function onMidi0(status, data1, data2) {
             if (MoveNavigation.handleTouch(status, data1, data2)) return;
         }
         // Grid pads
-        if (MoveGrid.handleNote(status, data1, data2, shiftDown)) return;
+        if (MoveGrid.handleNote(status, data1, data2, shiftDown, deleteDown)) return;
     }
 
     // println("Unhandled MIDI: " + status + " " + data1 + " " + data2);

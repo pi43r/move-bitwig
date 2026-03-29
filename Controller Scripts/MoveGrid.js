@@ -39,16 +39,15 @@ var MoveGrid = {
 
                 if (slot.hasContent().get()) {
                     var c = slot.color();
-                    // Sync: Bitwig ColorValue.red() etc. return numbers directly in v18+
-                    color = MoveHardware.nearestColor(c.red(), c.green(), c.blue());
+                    var isPlaying = slot.isPlaying().get();
+                    var isRecording = slot.isRecording().get();
 
-
-                    // State-based modifiers
-                    if (slot.isRecording().get()) {
-                        color = MoveHardware.COLOR.RED; // Override with bright red
-                    } else if (slot.isPlaying().get()) {
-                        // Keep color but maybe make it slightly brighter or pulse? 
-                        // For now we use the raw palette index
+                    if (isRecording) {
+                        color = MoveHardware.COLOR.RED; // Bright Red for Recording
+                    } else {
+                        // Use dimming for non-playing clips
+                        var dimFactor = isPlaying ? 1.0 : 0.2;
+                        color = MoveHardware.nearestColor(c.red() * dimFactor, c.green() * dimFactor, c.blue() * dimFactor);
                     }
                 }
 
@@ -72,10 +71,14 @@ var MoveGrid = {
                 if (cell) {
                     var track = this.trackBank.getItemAt(cell.track);
                     var slotBank = track.clipLauncherSlotBank();
-                    if (shiftDown) {
+                    var slot = slotBank.getItemAt(cell.scene);
+
+                    if (deleteDown) {
+                        slot.deleteObject();
+                    } else if (shiftDown) {
                         slotBank.stop();
                     } else {
-                        slotBank.getItemAt(cell.scene).launch();
+                        slot.launch();
                     }
                     return true;
                 }
