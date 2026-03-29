@@ -37,9 +37,9 @@ The controller is currently functional for transport, navigation, device control
   - [x] **Capacitive Touch**: Touching a knob immediately focuses the parameter on the OLED.
   - [x] Real-time parameter name and value display.
   - [x] Master Volume control via the **Master Knob** (physical 9th knob).
+  - [x] **Navigation & Selection**: Use the **Jog Wheel** for scrolling through tracks
 
 #### 🏗️ In Progress / Planned
-- [ ] **Navigation & Selection**: Use the **Jog Wheel** for scrolling through tracks/scenes and clicking to select.
 - [ ] **Note Modes**: Isomorphic Piano layout and 4x4 Drum Rack mode.
 - [ ] **Step Sequencer**: Full Bitwig step sequencing via the 16 step buttons.
 - [ ] **Advanced UI**: Graphical meters (Peak/RMS) and Volume/Pan visualizers on OLED.
@@ -75,7 +75,7 @@ The controller is currently functional for transport, navigation, device control
 | **Left / Right** | Scroll Track Bank (8 tracks) |
 | **Up / Down** | Scroll Scene Bank (4 scenes) |
 | **Shift + L / R** | Select Previous / Next Device |
-| **Jog Wheel** | (Planned) Scroll through tracks/scenes |
+| **Jog Wheel** | Scroll through tracks |
 
 ### Device & Parameters
 | Control | Action | Display Feedback |

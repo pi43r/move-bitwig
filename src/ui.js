@@ -32,7 +32,8 @@ const CONTROLS = {
         MoveShift, MoveMainKnob, MoveUp, MoveDown,
         MoveMaster, MoveKnob1, MoveKnob1 + 1, MoveKnob1 + 2, MoveKnob1 + 3,
         MoveKnob1 + 4, MoveKnob1 + 5, MoveKnob1 + 6, MoveKnob8,
-        85, 86, 88, 43, 42, 41, 40, 118 // Play, Rec, Mute, Track Selectors, Sample
+        85, 86, 88, 43, 42, 41, 40, 118,
+        14, 3 // Jog Wheel, Jog Click
     ],
     NOTES: [
         ...MovePads,

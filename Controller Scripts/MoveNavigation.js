@@ -76,6 +76,16 @@ var MoveNavigation = {
             var delta = MoveHardware.decodeDelta(value);
             this.cursorTrack.volume().inc(delta, 128);
             return true;
+        } else if (cc === MoveHardware.CC.JOG_WHEEL) {
+            var delta = MoveHardware.decodeDelta(value);
+            if (delta > 0) {
+                this.cursorTrack.selectNext();
+            } else if (delta < 0) {
+                this.cursorTrack.selectPrevious();
+            }
+            // Immediate OLED update
+            this.updateDisplay(midiOut);
+            return true;
         }
 
         // Knobs (Parameter Control)
