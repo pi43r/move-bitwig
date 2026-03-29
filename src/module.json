@@ -6,5 +6,7 @@
     "author": "pi43r",
     "ui": "ui.js",
     "api_version": 1,
-    "component_type": "overtake"
+    "component_type": "overtake",
+    "claims_master_knob": true,
+    "raw_midi": false
 }

@@ -1,10 +1,7 @@
 /*
  * Bitwig Move Controller Module
  *
- * Overtake module for Ableton Move that bridges hardware I/O to Bitwig Studio.
- * - Passes pad notes, relative knob CCs, and navigation through to Bitwig via external MIDI.
- * - Parses SysEx display updates from Bitwig and renders them on the Move OLED.
- * - Knobs send RAW relative delta CC 71-78 (1-63 CW, 64-127 CCW) — Bitwig uses inc().
+ * Refactored Overtake module with Middleman CC Bridge for feedback loop termination.
  */
 
 import {
@@ -17,301 +14,157 @@ import {
 
 import {
     isNoiseMessage, isCapacitiveTouchMessage,
-    setLED, clearAllLEDs, decodeDelta
+    setLED, setButtonLED, clearAllLEDs
 } from '/data/UserData/schwung/shared/input_filter.mjs';
 
-/* State */
-let bank = 0;
-let shiftHeld = false;
+/* State Management */
+const state = {
+    lines: ["Bitwig Move", "Bitwig Studio", "", ""],
+    pendingLines: ["", "", "", ""],
+    bank: 0,
+    shiftHeld: false,
+    lastSentLED: {}
+};
 
-/* Progressive LED init - spread LED setup over multiple frames to avoid buffer overflow */
-let ledInitPending = false;
-let ledInitIndex = 0;
-const LEDS_PER_FRAME = 8;  /* Send 8 LED messages per frame */
-
-/* Display state */
-let line1 = "Bitwig Move";
-let line2 = "";
-let line3 = "";
-let line4 = "";
-
-/* SysEx accumulation buffer - ALSA/USB may fragment SysEx into multiple packets */
-let sysexBuffer = [];
-let sysexReceiving = false;
-
-/* Get text over CC */
-let textBuffers = ["", "", "", ""];
-let pendingBuffers = ["", "", "", ""];
+/* MIDI Routing Configuration */
+const CONTROLS = {
+    CC: [
+        MoveShift, MoveMainKnob, MoveUp, MoveDown,
+        MoveMaster, MoveKnob1, MoveKnob1 + 1, MoveKnob1 + 2, MoveKnob1 + 3,
+        MoveKnob1 + 4, MoveKnob1 + 5, MoveKnob1 + 6, MoveKnob8,
+        85, 86 // Play, Rec buttons
+    ],
+    NOTES: [
+        ...MovePads,
+        ...MoveSteps,
+        0, 1, 2, 3, 4, 5, 6, 7 // Knob touches
+    ],
+    // Virtual CC Mapping for Middleman Bridge
+    BRIDGE: {
+        100: 85, // Virtual Play -> Physical 85
+        101: 86  // Virtual Rec -> Physical 86
+    }
+};
 
 function drawUI() {
     clear_screen();
-    print(2, 2, line1, 1);
-    print(2, 18, line2, 1);
-    print(2, 34, line3, 1);
-    print(2, 50, line4, 1);
+    print(2, 2, state.lines[0], 1);
+    print(2, 18, state.lines[1], 1);
+    print(2, 34, state.lines[2], 1);
+    print(2, 50, state.lines[3], 1);
 }
 
-function displayMessage(l1, l2, l3, l4) {
-    if (l1 !== undefined) line1 = l1;
-    if (l2 !== undefined) line2 = l2;
-    if (l3 !== undefined) line3 = l3;
-    if (l4 !== undefined) line4 = l4;
+/**
+ * Decode MIDI data to handle 3-byte and 4-byte messages.
+ */
+function decodeMidi(data) {
+    if (data[0] >= 0x80) return data;
+    if (data.length === 4) return data.slice(1);
+    return data;
 }
 
-function updateStatusLine() {
-    line4 = `Bank ${bank + 1}`;
-}
-
-/* Process a fully assembled SysEx message */
-function processSysEx(bytes) {
-    if (bytes.length < 3) return;
-    if (bytes[0] !== 0xF0) return;
-    if (bytes[1] !== 0x7D) return; /* Our custom manufacturer ID */
-
-    const command = bytes[2];
-    let strData = "";
-    for (let i = 3; i < bytes.length - 1; i++) {
-        strData += String.fromCharCode(bytes[i]);
-    }
-
-    switch (command) {
-        case 0x01: line1 = strData; break;
-        case 0x02: line2 = strData; break;
-        case 0x03: line3 = strData; break;
-        case 0x04: line4 = strData; break;
-    }
-}
-
+/**
+ * Handle MIDI from Bitwig (External)
+ */
 globalThis.onMidiMessageExternal = function (data) {
-    if (isNoiseMessage(data)) return;
+    try {
+        if (isNoiseMessage(data)) return;
 
-    /* Log every external message for debugging — remove once confirmed working */
-    //const hex = Array.from(data).map(b => b.toString(16).padStart(2, '0')).join(' ');
-    //console.log(`EXT: [${hex}] len=${data.length}`);
+        const raw = decodeMidi(data);
+        const status = raw[0] & 0xF0;
+        const b1 = raw[1];
+        const b2 = raw[2];
 
-    /* ---------------------------------------------------------------
-     * SysEx detection.
-     * The schwung framework may deliver SysEx in different formats:
-     *  (a) data[0] === 0xF0  → raw byte array starting with SysEx
-     *  (b) data[1] === 0xF0  → USB-MIDI 4-byte packet where data[0]
-     *                          is the cable/type header byte
-     * We handle both by checking both positions.
-     * --------------------------------------------------------------- */
-    const rawSysex = data[0] === 0xF0 ? 0 : (data[1] === 0xF0 ? 1 : -1);
-
-    /*
-    if (rawSysex >= 0 || sysexReceiving) {
-        const bytes = rawSysex === 1 ? Array.from(data).slice(1) : Array.from(data);
-
-        if (!sysexReceiving) {
-            sysexBuffer = bytes;
-            sysexReceiving = true;
-        } else {
-            for (let i = 0; i < bytes.length; i++) sysexBuffer.push(bytes[i]);
-        }
-
-        if (sysexBuffer.includes(0xF7)) {
-            console.log(`SysEx complete: [${sysexBuffer.map(b => b.toString(16).padStart(2,'0')).join(' ')}]`);
-            processSysEx(sysexBuffer);
-            sysexBuffer = [];
-            sysexReceiving = false;
-        }
-        return;
-    }
-    */
-
-    /* ---------------------------------------------------------------
-     * Text-over-CC display (Bitwig → Move)
-     * --------------------------------------------------------------- */
-    const msgStatus = data[0] & 0xF0;
-
-    if (msgStatus === MidiCC) {
-        const cc = data[1];
-        const value = data[2];
-        // Text lines
-        if (cc >= 110 && cc <= 113) {
-            const line = cc - 110;
-
-            if (value === 1) {
-                pendingBuffers[line] = "";
+        if (status === MidiCC) {
+            // 1. Middleman Bridge Translation
+            if (CONTROLS.BRIDGE[b1]) {
+                setButtonLED(CONTROLS.BRIDGE[b1], b2);
                 return;
             }
-            if (value === 0) {
+
+            // 2. Text-over-CC Protocol
+            if (b1 >= 110 && b1 <= 113) {
+                const lineIdx = b1 - 110;
+                if (b2 === 1) state.pendingLines[lineIdx] = "";
+                else if (b2 > 0) state.pendingLines[lineIdx] += String.fromCharCode(b2);
                 return;
             }
-            pendingBuffers[line] += String.fromCharCode(value);
-            return;
-        }
 
-        // Commit
-        if (cc === 114) {
-            for (let i = 0; i < 4; i++) {
-                if (pendingBuffers[i].length > 0) {
-                    textBuffers[i] = pendingBuffers[i];
-                    pendingBuffers[i] = "";
+            if (b1 === 114 && b2 === 1) {
+                for (let i = 0; i < 4; i++) {
+                    if (state.pendingLines[i] !== undefined) state.lines[i] = state.pendingLines[i];
                 }
+                return;
             }
-            console.log(`COMMIT → ${JSON.stringify(textBuffers)}`);
-            // Apply to display
-            line1 = textBuffers[0];
-            line2 = textBuffers[1];
-            line3 = textBuffers[2];
-            line4 = textBuffers[3];
 
+            // 3. Standard LED Feedback
+            state.lastSentLED[`CC_${b1}`] = b2;
+            setButtonLED(b1, b2);
             return;
         }
-    }
 
-    /* ---------------------------------------------------------------
-     * NoteOn / NoteOff from Bitwig = pad LED update.
-     * Do NOT pass to move_midi_internal_send — that triggers the synth.
-     * Instead, use setLED() which only affects the LED ring.
-     * --------------------------------------------------------------- */
-    if (msgStatus === MidiNoteOn || msgStatus === MidiNoteOff) {
-        const note = data[1];
-        const velocity = data[2];
-        const color = (msgStatus === MidiNoteOn && velocity > 0) ? velocity : Black;
-        setLED(note, color);
-        return;
+        if (status === MidiNoteOn || status === MidiNoteOff) {
+            const color = (status === MidiNoteOn && b2 > 0) ? b2 : Black;
+            state.lastSentLED[`Note_${b1}`] = color;
+            setLED(b1, color);
+            return;
+        }
+    } catch (e) {
+        // console.log(`Error: ${e}`);
     }
-
-    /* CC messages (transport LED state etc.) — pass through normally */
-    move_midi_internal_send([data[0] >> 4, data[0], data[1], data[2]]);
 };
 
+/**
+ * Handle MIDI from Hardware (Internal)
+ */
 globalThis.onMidiMessageInternal = function (data) {
-    if (isNoiseMessage(data)) return;
-    if (isCapacitiveTouchMessage(data)) {
-        /* Pass touch messages to Bitwig so it can react */
-        move_midi_external_send([2 << 4 | (data[0] / 16), data[0], data[1], data[2]]);
-        return;
-    }
+    try {
+        if (isNoiseMessage(data)) return;
 
-    const status = data[0] & 0xF0;
-    const d1 = data[1];
-    const d2 = data[2];
+        const raw = decodeMidi(data);
+        const type = raw[0] & 0xF0;
+        const d1 = raw[1];
+        const d2 = raw[2];
 
-    const isNote = status === MidiNoteOn || status === MidiNoteOff;
-    const isNoteOn = status === MidiNoteOn;
-    const isCC = status === MidiCC;
-
-    if (isNote) {
-        let note = d1;
-        let velocity = d2;
-
-        /* Bank switching via step buttons — just update LED and display */
-        if (MoveSteps.includes(note) && velocity === 127) {
-            setLED(MoveSteps[bank], Black);
-            bank = MoveSteps.indexOf(note);
-            setLED(note, White);
-            displayMessage("Bitwig Move", `Bank ${bank + 1}`, "", "");
-            updateStatusLine();
+        if (isCapacitiveTouchMessage(raw)) {
+            move_midi_external_send([2 << 4 | (raw[0] & 0x0F), raw[0], raw[1], raw[2]]);
             return;
         }
 
-        /* Forward pad notes to Bitwig as-is */
-        if (MovePads.includes(note)) {
-            move_midi_external_send([2 << 4 | (status / 16), status, note, velocity]);
-            return;
-        }
-    }
+        if (type === MidiCC) {
+            if (d1 >= 110 && d1 <= 114) return;
 
-    if (isCC) {
-        let ccNumber = d1;
-        let value = d2;
+            if (CONTROLS.CC.includes(d1)) {
+                // Echo filter
+                if (state.lastSentLED[`CC_${d1}`] === d2) return;
 
-        /* Shift state tracking */
-        if (ccNumber === MoveShift) {
-            shiftHeld = value === 127;
-            if (shiftHeld) {
-                displayMessage(undefined, "Shift held", "", undefined);
-            } else {
-                displayMessage(undefined, "", "", undefined);
-                updateStatusLine();
+                // Strict push-only for transport buttons
+                if ((d1 === 85 || d1 === 86) && d2 !== 127) return;
+
+                if (d1 === MoveShift) state.shiftHeld = (d2 === 127);
+                move_midi_external_send([2 << 4 | 0x0b, type, d1, d2]);
             }
-            return;
-        }
+        } else if (type === MidiNoteOn || type === MidiNoteOff) {
+            if (CONTROLS.NOTES.includes(d1)) {
+                // Echo filter
+                const noteColor = (type === MidiNoteOn) ? d2 : Black;
+                if (state.lastSentLED[`Note_${d1}`] === noteColor) return;
 
-        /* Pass Jog wheel to external */
-        if (ccNumber === MoveMainKnob) {
-            move_midi_external_send([2 << 4 | 0x0b, MidiCC, ccNumber, value]);
-            return;
+                move_midi_external_send([2 << 4 | (type / 16), type, d1, d2]);
+            }
         }
-
-        /* Up/Down buttons to external */
-        if (ccNumber === MoveUp) {
-            move_midi_external_send([2 << 4 | 0x0b, MidiCC, ccNumber, value]);
-            return;
-        }
-        if (ccNumber === MoveDown) {
-            move_midi_external_send([2 << 4 | 0x0b, MidiCC, ccNumber, value]);
-            return;
-        }
-
-        /* Knob CCs (71-78) - pass raw relative delta directly to Bitwig.
-         * Bitwig uses inc(delta, resolution) on the parameter, so we do NOT
-         * convert to absolute here. The raw value encodes direction:
-         * 1-63 = clockwise, 64-127 = counter-clockwise. */
-        if (ccNumber >= MoveKnob1 && ccNumber <= MoveKnob8) {
-            /* Forward raw relative CC unchanged on same CC number */
-            move_midi_external_send([2 << 4 | 0x0b, MidiCC, ccNumber, value]);
-            return;
-        }
-
-        /* Master knob (CC 79) - pass raw relative delta to Bitwig */
-        if (ccNumber === MoveMaster) {
-            move_midi_external_send([2 << 4 | 0x0b, MidiCC, ccNumber, value]);
-            return;
-        }
-
-        /* Forward other CCs as-is */
-        move_midi_external_send([2 << 4 | 0x0b, MidiCC, ccNumber, value]);
+    } catch (e) {
+        // console.log(`Error: ${e}`);
     }
 };
-
-/* Progressive LED setup - light all pads dim on init; Bitwig will overwrite with clip colors */
-function setupLedBatch() {
-    const ledsToSet = [
-        { note: MoveSteps[bank], color: White }  /* Bank indicator */
-    ];
-    for (const pad of MovePads) {
-        ledsToSet.push({ note: pad, color: LightGrey });
-    }
-
-    const start = ledInitIndex;
-    const end = Math.min(start + LEDS_PER_FRAME, ledsToSet.length);
-
-    for (let i = start; i < end; i++) {
-        setLED(ledsToSet[i].note, ledsToSet[i].color);
-    }
-
-    ledInitIndex = end;
-    if (ledInitIndex >= ledsToSet.length) {
-        ledInitPending = false;
-        ledInitIndex = 0;
-    }
-}
 
 globalThis.init = function () {
-    console.log("Bitwig Move module starting..");
-
-    displayMessage("Bitwig Move", "Connecting...", "", "");
-    updateStatusLine();
-
-    sysexBuffer = [];
-    sysexReceiving = false;
-
-    /* Note: LEDs are cleared by host before loading overtake module.
-     * Use progressive LED init to avoid buffer overflow. */
-    ledInitPending = true;
-    ledInitIndex = 0;
+    state.lines = ["Bitwig Move", "", "", ""];
+    state.pendingLines = ["", "", "", ""];
+    state.lastSentLED = {};
+    clearAllLEDs();
 };
 
 globalThis.tick = function () {
-    /* Continue progressive LED setup if pending */
-    if (ledInitPending) {
-        setupLedBatch();
-    }
-
     drawUI();
 };
