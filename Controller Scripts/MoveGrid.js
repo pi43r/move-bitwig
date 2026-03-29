@@ -70,11 +70,12 @@ var MoveGrid = {
             if (velocity > 1) {
                 var cell = MoveHardware.getPadCoordinate(note);
                 if (cell) {
-                    var slot = this.trackBank.getItemAt(cell.track).clipLauncherSlotBank().getItemAt(cell.scene);
+                    var track = this.trackBank.getItemAt(cell.track);
+                    var slotBank = track.clipLauncherSlotBank();
                     if (shiftDown) {
-                        slot.stop();
+                        slotBank.stop();
                     } else {
-                        slot.launch();
+                        slotBank.getItemAt(cell.scene).launch();
                     }
                     return true;
                 }
