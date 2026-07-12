@@ -1,8 +1,9 @@
 {
-    "id": "controller",
-    "name": "Bitwig Controller",
-    "version": "0.1.0",
-    "description": "Custom MIDI controller for Bitwig Studio",
+    "id": "move-bitwig",
+    "name": "Bitwig Move Controller",
+    "version": "0.2.0",
+    "abbrev": "BWG",
+    "description": "Control surface bridge for Bitwig Studio (sysex protocol v2)",
     "author": "pi43r",
     "ui": "ui.js",
     "api_version": 1,

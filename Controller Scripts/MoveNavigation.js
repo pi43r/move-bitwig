@@ -1,6 +1,6 @@
 /**
  * MoveNavigation.js
- * Handles Arrow keys, Scrolling, and Device/Track navigation.
+ * Arrow keys, scrolling, device/track navigation, knobs, display content.
  */
 
 var MoveNavigation = {
@@ -8,21 +8,25 @@ var MoveNavigation = {
     cursorTrack: null,
     cursorDevice: null,
     remoteControls: null,
+    masterTrack: null,
 
     activeParameter: null,
 
-    init: function(host) {
+    init: function (host) {
         this.trackBank = host.createMainTrackBank(8, 2, 4);
         this.cursorTrack = host.createCursorTrack(0, 0);
         this.cursorDevice = this.cursorTrack.createCursorDevice();
         this.remoteControls = this.cursorDevice.createCursorRemoteControlsPage(8);
+        this.masterTrack = host.createMasterTrack(0);
 
         // Observers for OLED metadata
         this.cursorTrack.name().markInterested();
         this.cursorTrack.volume().name().markInterested();
         this.cursorTrack.volume().value().displayedValue().markInterested();
         this.cursorDevice.name().markInterested();
-        
+        this.masterTrack.volume().name().markInterested();
+        this.masterTrack.volume().value().displayedValue().markInterested();
+
         for (var i = 0; i < 8; i++) {
             var rc = this.remoteControls.getParameter(i);
             rc.name().markInterested();
@@ -32,72 +36,77 @@ var MoveNavigation = {
     },
 
     /**
-     * Update navigation state and OLED metadata (Called from flush)
+     * Write display content (called from flush)
      */
-    updateDisplay: function(midiOut) {
+    updateDisplay: function () {
         var trackName = this.cursorTrack.name().get() || "No Track";
         var deviceName = this.cursorDevice.name().get() || "No Device";
-        
-        MoveDisplay.sendText(1, trackName, midiOut);
-        MoveDisplay.sendText(2, deviceName, midiOut);
+
+        MoveProtocol.text(1, trackName);
+        MoveProtocol.text(2, deviceName);
 
         if (this.activeParameter) {
-            MoveDisplay.sendText(3, this.activeParameter.name().get(), midiOut);
-            MoveDisplay.sendText(4, this.activeParameter.value().displayedValue().get(), midiOut);
+            MoveProtocol.text(3, this.activeParameter.name().get());
+            MoveProtocol.text(4, this.activeParameter.value().displayedValue().get());
         } else {
-            MoveDisplay.sendText(3, "", midiOut);
-            MoveDisplay.sendText(4, "", midiOut);
+            MoveProtocol.text(3, "");
+            MoveProtocol.text(4, "");
         }
-        
-        MoveDisplay.commit(midiOut);
     },
 
     /**
-     * Handle physical CC input (Called from onMidi0)
+     * Handle physical CC input (called from onMidi0)
      */
-    handleCC: function(cc, value, shiftDown) {
+    handleCC: function (cc, value, modifiers) {
+        // Relative encoders send a 0 delta only as noise; buttons send 0 on release.
         if (value === 0) return false;
 
         if (cc === MoveHardware.CC.LEFT) {
-            if (shiftDown) this.cursorDevice.selectPrevious();
+            if (modifiers.shift) this.cursorDevice.selectPrevious();
             else this.trackBank.scrollBackwards();
             return true;
-        } else if (cc === MoveHardware.CC.RIGHT) {
-            if (shiftDown) this.cursorDevice.selectNext();
+        }
+        if (cc === MoveHardware.CC.RIGHT) {
+            if (modifiers.shift) this.cursorDevice.selectNext();
             else this.trackBank.scrollForwards();
             return true;
-        } else if (cc === MoveHardware.CC.UP) {
+        }
+        if (cc === MoveHardware.CC.UP) {
             this.trackBank.sceneBank().scrollBackwards();
             return true;
-        } else if (cc === MoveHardware.CC.DOWN) {
+        }
+        if (cc === MoveHardware.CC.DOWN) {
             this.trackBank.sceneBank().scrollForwards();
-            return true;
-        } else if (cc === MoveHardware.CC.MASTER) {
-            var delta = MoveHardware.decodeDelta(value);
-            this.cursorTrack.volume().inc(delta, 128);
-            return true;
-        } else if (cc === MoveHardware.CC.JOG_WHEEL) {
-            var delta = MoveHardware.decodeDelta(value);
-            if (delta > 0) {
-                this.cursorTrack.selectNext();
-            } else if (delta < 0) {
-                this.cursorTrack.selectPrevious();
-            }
-            // Immediate OLED update
-            this.updateDisplay(midiOut);
             return true;
         }
 
-        // Knobs (Parameter Control)
+        // Master (volume) knob: master track volume (manual parity).
+        if (cc === MoveHardware.CC.MASTER) {
+            var delta = MoveHardware.decodeDelta(value);
+            var vol = this.masterTrack.volume();
+            vol.inc(delta, modifiers.shift ? 512 : 128); // Shift = fine
+            this.activeParameter = vol;
+            host.requestFlush();
+            return true;
+        }
+
+        // Jog wheel: track selection
+        if (cc === MoveHardware.CC.JOG_WHEEL) {
+            var jogDelta = MoveHardware.decodeDelta(value);
+            if (jogDelta > 0) this.cursorTrack.selectNext();
+            else if (jogDelta < 0) this.cursorTrack.selectPrevious();
+            return true;
+        }
+
+        // Knobs 1-8: remote controls
         if (cc >= MoveHardware.CC.KNOB_FIRST && cc <= MoveHardware.CC.KNOB_LAST) {
             var knobIdx = cc - MoveHardware.CC.KNOB_FIRST;
             var rc = this.remoteControls.getParameter(knobIdx);
-            var delta = MoveHardware.decodeDelta(value);
-            if (delta !== 0) {
-                rc.inc(delta, 128);
-                // Real-time feedback
+            var knobDelta = MoveHardware.decodeDelta(value);
+            if (knobDelta !== 0) {
+                rc.inc(knobDelta, modifiers.shift ? 512 : 128); // Shift = fine
                 this.activeParameter = rc;
-                this.updateDisplay(midiOut);
+                host.requestFlush();
             }
             return true;
         }
@@ -106,27 +115,21 @@ var MoveNavigation = {
     },
 
     /**
-     * Handle Knob touches (Note 0-9)
+     * Handle knob touches (notes 0-9)
      */
-    handleTouch: function(status, note, velocity) {
-        if (note >= 0 && note <= 9) {
-            var isPress = ((status & 0xF0) === 0x90 && velocity > 0);
-            
-            if (isPress) {
-                if (note >= 0 && note <= 7) {
-                    this.activeParameter = this.remoteControls.getParameter(note);
-                } else if (note === 8) {
-                    this.activeParameter = this.cursorTrack.volume();
-                }
-                
-                // Trigger immediate update when touched
-                if (typeof midiOut !== 'undefined') {
-                    this.updateDisplay(midiOut);
-                }
+    handleTouch: function (status, note, velocity) {
+        if (note > 9) return false;
+
+        var isPress = ((status & 0xF0) === 0x90 && velocity > 0);
+        if (isPress) {
+            if (note <= 7) {
+                this.activeParameter = this.remoteControls.getParameter(note);
+            } else if (note === 8) {
+                this.activeParameter = this.masterTrack.volume();
             }
-            // Note: We don't clear activeParameter on release ("it should stay")
-            return true;
+            host.requestFlush();
         }
-        return false;
+        // activeParameter intentionally stays after release ("sticky")
+        return true;
     }
 };

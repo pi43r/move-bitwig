@@ -23,6 +23,9 @@ var MoveHardware = {
         CAPTURE: 52,
         MENU: 50,
         BACK: 51,
+        UNDO: 56,
+        LOOP: 58,
+        COPY: 60,
         TRACK_SELECT_1: 43,
         TRACK_SELECT_2: 42,
         TRACK_SELECT_3: 41,
@@ -40,19 +43,19 @@ var MoveHardware = {
         PAD_LAST: 99
     },
 
-    // LED Colors (MIDI note/CC velocity values)
+    // LED Colors (palette indices, sent as note velocity / CC value)
+    // Palette ends with: 125 = pure blue, 126 = pure green, 127 = pure red.
     COLOR: {
         BLACK: 0,
         WHITE: 120,
         LIGHT_GREY: 118,
         RED: 127,
         DIM_RED: 1,
-        GREEN: 8,
-        DIM_GREEN: 2,
+        GREEN: 126,
+        BRIGHT_GREEN: 8,
         AMBER: 64,
         BLUE: 125,
         HAS_CLIP: 30, // dim white
-        PLAYING: 8,
         RECORDING: 127,
         QUEUED: 64
     },

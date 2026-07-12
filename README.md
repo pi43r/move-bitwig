@@ -2,106 +2,107 @@
 
 A complete integration script and module to turn the **Ableton Move** into a dedicated, deeply-integrated MIDI controller for Bitwig Studio.
 
+See **SPEC.md** for the full feature specification and **TODO.md** for the backlog.
+
 ## Architecture
-This project uses a "Middleman" architecture to bypass standard MIDI limitations and provide rich visual feedback:
-1.  **Move Overtake Module (`move-bitwig`)**: A custom JavaScript module running on the Move (via `schwung`). It handles the OLED display via a custom **Text-over-CC** protocol and manages LED feedback loops.
-2.  **Bitwig Control Surface Script (`Move.control.js`)**: The main driver running in Bitwig Studio. It manages state, observers, and sends high-level commands to the hardware.
 
-## Current Project Status: **Phase 1 (Core Control)**
-The controller is currently functional for transport, navigation, device control, and basic clip launching.
+1. **Move module (`move-bitwig`)**: a JavaScript overtake module running on the Move via
+   [schwung](https://github.com/charlesvestal/schwung). Owns the OLED and LEDs, forwards
+   hardware input to Bitwig, renders feedback received over sysex.
+2. **Bitwig Controller Script (`Move.control.js`)**: the driver running in Bitwig Studio.
+   Owns all state and observers, speaks **protocol v2** (sysex) to the module.
 
-### Feature Checklist
+### Protocol v2 (sysex)
 
-#### ✅ Implemented
-- **Infrastructure**
-  - [x] Bidirectional MIDI communication bridge.
-  - [x] **Middleman CC Bridge**: Custom virtual CCs (100-107) for LED feedback to terminate feedback loops.
-  - [x] Custom Text-over-CC OLED protocol (4 lines of text).
-  - [x] Color Engine: Match Bitwig colors to Move's 128-color hardware palette.
-- **Transport & Global**
-  - [x] Play / Pause toggle.
-  - [x] Arranger Record toggle (**REC** button).
-  - [x] Real-time LED feedback: Play (Green), Global Rec (Red).
-- **Track Controls**
-  - [x] **Mute / Solo**: Dedicated `MUTE` button toggles mute; `Shift + Mute` toggles Solo.
-  - [x] **Record Arm**: **Sample** button (CC 118) toggles track arm with RGB LED feedback.
-  - [x] **Stop Clip**: Hold `Shift + Pad` to stop the clip in that cell.
-- **Navigation & Launcher**
-  - [x] **Scene Launching**: Track Selector buttons 1-4 launch scenes 1-4.
-  - [x] Track Bank scrolling (8 tracks at a time) via Left/Right arrows.
-  - [x] Scene Bank scrolling (4 scenes at a time) via Up/Down arrows.
-  - [x] Device Selection via `Shift + Left/Right`.
-  - [x] 8x4 Grid (32 Pads) mapped to Bitwig Clip Launcher.
-- **Device & Parameters**
-  - [x] Automatic mapping of 8 Remote Controls to Move Knobs.
-  - [x] **Capacitive Touch**: Touching a knob immediately focuses the parameter on the OLED.
-  - [x] Real-time parameter name and value display.
-  - [x] Master Volume control via the **Master Knob** (physical 9th knob).
-  - [x] **Navigation & Selection**: Use the **Jog Wheel** for scrolling through tracks
+All Bitwig → Move feedback (display text, LEDs) travels as sysex
+(`F0 7D 4D 42 <cmd> ... F7`); all Move → Bitwig input stays plain notes/CCs. Because
+feedback and input never share message types, **LED feedback loops are impossible** —
+the old virtual-CC bridge, text-over-CC protocol and echo filters are gone.
 
-#### 🏗️ In Progress / Planned
-- [ ] **Note Modes**: Isomorphic Piano layout and 4x4 Drum Rack mode.
-- [ ] **Step Sequencer**: Full Bitwig step sequencing via the 16 step buttons.
-- [ ] **Advanced UI**: Graphical meters (Peak/RMS) and Volume/Pan visualizers on OLED.
-- [ ] **Menu System**: `Shift + Menu` for hardware settings (Velocity curve, MIDI channel).
+Pad and RGB-button colors are sent as **direct RGB** and re-emitted by the module using
+Move's native Ableton LED sysex (`F0 00 21 1D 01 01 3B 10 <idx> <rgb…> F7`) — colors
+match Bitwig exactly, no 128-color palette matching.
+
+The link is supervised: Bitwig pings every second; the module shows
+"Waiting for Bitwig…" and clears LEDs when the link drops, and full state is resent on
+reconnect.
+
+## Current Status: protocol v2 rework — **pending hardware test**
+
+See the hardware test checklist at the top of TODO.md.
 
 ## Control Reference
 
 ### Transport & Global
-| Control | Action | LED Feedback |
-| :--- | :--- | :--- |
-| **PLAY** | Toggle Play / Pause | Green = Playing |
-| **REC** | Toggle Arranger Record | Red = Recording |
-| **Shift + Menu** | (Planned) Hardware Settings | |
+| Control          | Action                  | LED             |
+| :--------------- | :---------------------- | :-------------- |
+| **PLAY**         | Toggle Play / Stop      | Lit = playing   |
+| **Shift + PLAY** | Re-trigger playback     |                 |
+| **REC**          | Toggle Arranger Record  | Lit = recording |
+| **Shift + REC**  | Toggle Launcher Overdub |                 |
+| **UNDO**         | Undo                    |                 |
+| **Shift + UNDO** | Redo                    |                 |
 
 ### Track Controls (Selected Track)
-| Control | Action | LED Feedback |
-| :--- | :--- | :--- |
-| **MUTE** | Toggle Mute | White = Muted / Soloed |
-| **Shift + MUTE** | Toggle Solo | White = Muted / Soloed |
-| **Sample** | Toggle Record Arm | Red = Armed |
-| **Master Knob** | Master Volume | |
+| Control           | Action                       | LED                |
+| :---------------- | :--------------------------- | :----------------- |
+| **MUTE**          | Toggle Mute                  | Lit = muted/soloed |
+| **Shift + MUTE**  | Toggle Solo                  |                    |
+| **Sample button** | Toggle Record Arm            | Red ring = armed   |
+| **Master Knob**   | Master volume (Shift = fine) |                    |
 
 ### Clip Launcher & Scenes
-| Control | Action | LED Feedback |
-| :--- | :--- | :--- |
-| **Pads (8x4)** | Launch or Record Clips | RGB (Matches Bitwig) |
-| **Shift + Pad** | Stop Clip in slot | |
-| **Track Sel 1-4**| Launch Scene 1-4 | RGB (Matches Scene color) |
+| Control               | Action           | LED                                                                |
+| :-------------------- | :--------------- | :----------------------------------------------------------------- |
+| **Pads (8x4)**        | Launch clips     | Clip color (RGB); dim = stopped, bright = playing, red = recording |
+| **Shift + Pad**       | Select clip slot |                                                                    |
+| **Delete + Pad**      | Delete clip      |                                                                    |
+| **Track buttons 1-4** | Launch Scene 1-4 | Scene color (RGB)                                                  |
 
 ### Navigation
-| Control | Action |
-| :--- | :--- |
-| **Left / Right** | Scroll Track Bank (8 tracks) |
-| **Up / Down** | Scroll Scene Bank (4 scenes) |
-| **Shift + L / R** | Select Previous / Next Device |
-| **Jog Wheel** | Scroll through tracks |
+| Control           | Action                        |
+| :---------------- | :---------------------------- |
+| **Left / Right**  | Scroll track bank (8 tracks)  |
+| **Up / Down**     | Scroll scene bank (4 scenes)  |
+| **Shift + L / R** | Select previous / next device |
+| **Jog Wheel**     | Select track                  |
 
 ### Device & Parameters
-| Control | Action | Display Feedback |
-| :--- | :--- | :--- |
-| **Knobs 1-8** | Adjust Remote Controls | Parameter Value |
-| **Knob Touch** | Focus Parameter | Parameter Name & Value |
+| Control               | Action                         | Display         |
+| :-------------------- | :----------------------------- | :-------------- |
+| **Knobs 1-8**         | Remote Controls (Shift = fine) | Parameter value |
+| **Knob Touch**        | Focus parameter                | Name & value    |
+| **Master Knob Touch** | Focus master volume            | Name & value    |
 
 ## Installation
 
 ### 1. Hardware Setup (Ableton Move)
 1. Ensure your Move has the `schwung` runtime installed.
-2. Run the deployment script to push the overtaker module:
+2. Deploy the module:
    ```bash
-   ./scripts/install.sh
+   ./scripts/build.sh && ./scripts/install.sh
    ```
-3. On the Move: Enter **Shadow Mode** (`Shift + Volume + Knob 1`), go to **Overtake Modules**, and select **Bitwig Move Controller**.
+3. On the Move: enter Shadow Mode (`Shift + Vol + Knob 1`), go to the Tools /
+   Overtake menu, and select **Bitwig Move Controller**.
 
 ### 2. Software Setup (Bitwig Studio)
 1. Copy the contents of `Controller Scripts/` to your Bitwig Controller Scripts folder:
    - **Windows**: `%USERPROFILE%\Documents\Bitwig Studio\Controller Scripts\Move\`
    - **macOS**: `~/Documents/Bitwig Studio/Controller Scripts/Move/`
-2. In Bitwig: Go to **Settings > Controllers**.
-3. Click **Add Controller** > **Ableton** > **Move**.
-4. Select the **Ableton Move** (USB MIDI) ports for both Input and Output.
 
-## Technical Details
-- **OLED Protocol**: Uses CC 110-113 for character data and CC 114 as a commit flag.
-- **Color Engine**: Implements Euclidean distance matching against the official Move 128-color palette for accurate LED feedback.
-- **Touch Logic**: Leverages Move's capacitive touch reports to provide "Sticky" parameter info on the display.
+   > Upgrading from v0.1? Delete the old folder first — `MoveDisplay.js` no longer exists.
+2. In Bitwig: **Settings > Controllers > Add Controller > Ableton > Move**.
+3. Select the **Ableton Move** USB MIDI ports for Input and Output.
+4. The Bitwig console should print `MoveProtocol: handshake ok`.
+
+## Debugging
+
+- Bitwig side: open the controller console (Settings > Controllers > Move > console icon).
+- Move side:
+  ```bash
+  ssh ableton@move.local "touch /data/UserData/schwung/debug_log_on"
+  ssh ableton@move.local "tail -f /data/UserData/schwung/debug.log"
+  ```
+  Module errors are logged with a `move-bitwig` prefix via `console.log`.
+
+

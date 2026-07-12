@@ -1,6 +1,7 @@
 /**
  * MoveTrackControls.js
- * Handles Track Selectors (Launch Scenes) and Track state (Mute/Solo).
+ * Track Selectors (launch scenes), Mute/Solo, Record Arm.
+ * All LED feedback goes through MoveProtocol (sysex).
  */
 
 var MoveTrackControls = {
@@ -11,76 +12,58 @@ var MoveTrackControls = {
         this.cursorTrack = cursorTrack;
         this.sceneBank = sceneBank;
 
-        // Observers for Mute/Solo
         this.cursorTrack.mute().markInterested();
         this.cursorTrack.solo().markInterested();
+        this.cursorTrack.arm().markInterested();
 
-        // Observers for Scenes (to show track button colors)
         for (var i = 0; i < 4; i++) {
             var scene = this.sceneBank.getItemAt(i);
             scene.color().markInterested();
             scene.exists().markInterested();
         }
-
-        // Observer for Record Arm
-        this.cursorTrack.arm().markInterested();
     },
 
     /**
-     * Update LED feedback (Called from flush)
+     * Write desired LED state (called from flush)
      */
-    updateLEDs: function (midiOut) {
-        // 1. Mute LED feedback
-        var isMuted = this.cursorTrack.mute().get();
-        var isSoloed = this.cursorTrack.solo().get();
+    updateLEDs: function () {
+        // 1. Mute button (white LED): lit when muted or soloed
+        var lit = this.cursorTrack.mute().get() || this.cursorTrack.solo().get();
+        MoveProtocol.ledCC(MoveHardware.CC.MUTE, lit ? 127 : 0);
 
-        // Adjust for White-only LED on Mute button
-        if (isSoloed) {
-            midiOut.sendMidi(0xB0, 102, MoveHardware.COLOR.WHITE); // Bright for Solo
-        } else if (isMuted) {
-            midiOut.sendMidi(0xB0, 102, MoveHardware.COLOR.WHITE); // Bright for Muted
-        } else {
-            midiOut.sendMidi(0xB0, 102, MoveHardware.COLOR.BLACK); // Off when active
-        }
-
-        // 2. Track Selectors (Scene colors) via Middleman Bridge (103-106)
+        // 2. Track buttons 1-4 show scene colors (RGB, idx = CC 43..40)
         for (var i = 0; i < 4; i++) {
             var scene = this.sceneBank.getItemAt(i);
-            var bridgeCC = 103 + i; // Track 1 -> 103, Track 2 -> 104, etc.
-
+            var cc = MoveHardware.CC.TRACK_SELECT_1 - i; // 43, 42, 41, 40
             if (scene.exists().get()) {
                 var c = scene.color();
-                var color = MoveHardware.nearestColor(c.red(), c.green(), c.blue());
-                midiOut.sendMidi(0xB0, bridgeCC, color);
+                MoveProtocol.ledRGB(cc, c.red(), c.green(), c.blue());
             } else {
-                midiOut.sendMidi(0xB0, bridgeCC, MoveHardware.COLOR.HAS_CLIP); // Dim white / ready
+                MoveProtocol.ledRGB(cc, 0.08, 0.08, 0.08); // dim white = empty
             }
         }
 
-        // 3. Record Arm (Sample button Bridge 107 -> Note 118)
-        var isArmed = this.cursorTrack.arm().get();
-        midiOut.sendMidi(0xB0, 107, isArmed ? MoveHardware.COLOR.RED : MoveHardware.COLOR.BLACK);
+        // 3. Record Arm on the Sample button RGB ring (idx = CC 118)
+        var armed = this.cursorTrack.arm().get();
+        MoveProtocol.ledRGB(MoveHardware.CC.SAMPLE, armed ? 1.0 : 0, 0, 0);
     },
 
     /**
-     * Handle physical CC input (Called from onMidi0)
+     * Handle physical CC input (called from onMidi0)
      */
-    handleCC: function (cc, value, shiftDown) {
+    handleCC: function (cc, value, modifiers) {
         if (value === 0) return false;
 
         // Mute / Solo
         if (cc === MoveHardware.CC.MUTE) {
-            if (shiftDown) {
-                this.cursorTrack.solo().toggle();
-            } else {
-                this.cursorTrack.mute().toggle();
-            }
+            if (modifiers.shift) this.cursorTrack.solo().toggle();
+            else this.cursorTrack.mute().toggle();
             return true;
         }
 
-        // Scene Launch (Track Selectors)
+        // Scene Launch (Track Selector buttons)
         if (cc >= MoveHardware.CC.TRACK_SELECT_4 && cc <= MoveHardware.CC.TRACK_SELECT_1) {
-            var sceneIdx = 43 - cc; // 43 -> 0, 42 -> 1, 41 -> 2, 40 -> 3
+            var sceneIdx = MoveHardware.CC.TRACK_SELECT_1 - cc; // 43 -> 0 ... 40 -> 3
             this.sceneBank.getItemAt(sceneIdx).launch();
             return true;
         }

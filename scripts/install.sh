@@ -19,8 +19,8 @@ echo "Copying module to Move..."
 ssh ableton@move.local "mkdir -p /data/UserData/schwung/modules/overtake/move-bitwig"
 scp -r dist/move-bitwig/* ableton@move.local:/data/UserData/schwung/modules/overtake/move-bitwig/
 
-# Clean up old tools path if it exists
-ssh ableton@move.local "rm -rf /data/UserData/schwung/modules/tools/move-bitwig" 2>/dev/null || true
+# Clean up old install paths / old module id if they exist
+ssh ableton@move.local "rm -rf /data/UserData/schwung/modules/tools/move-bitwig /data/UserData/schwung/modules/overtake/controller" 2>/dev/null || true
 
 # Set permissions so Module Store can update later
 echo "Setting permissions..."
