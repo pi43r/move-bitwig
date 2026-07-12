@@ -198,28 +198,65 @@ Driven by v0.4 hardware feedback:
 - [x] **Drum pad chain volume** — held drum pad + Volume encoder = that pad's
       chain volume (manual §18.5 parity; Shift = fine, name/value on display)
 
-**Hardware test checklist v0.5.0** (Bitwig script only):
-1. Turn/touch a device knob → name + value on display (no 8-bar overlay);
-   MIXER knobs still show the 8 volume bars while touched
-2. Hold Shift → step row lights the function map; green follows metronome /
-   groove / full velocity / overlay state; releasing Shift restores step LEDs
-3. NOTE: Up/Down toasts the octave; overlay: Up/Down = octave, L/R = scale
-4. Drum: left 4×4 plays pads (bottom-left lowest), colors correct; right 4×4
-   sets velocity (green = current) and audibly plays the last pad at it
-5. Drum: Shift+pad / Mute+pad still select/mute the correct pad (4×4 mapping)
-6. Drum: step taps write with the chosen velocity; velocity pad + held step
-   writes that velocity into the step
-7. Hold Loop → step LEDs = loop bars; tap n / double-tap / A+B range work;
-   Loop+Up/Down doubles/halves; Loop+Copy doubles content; releasing Loop
-   without a gesture still toggles arranger loop (no double-fire)
-8. MIXER: Copy+knob sends to Send A (display shows send name/value),
-   Copy+Shift+knob = Send B; volume/pan layers unaffected
-9. SESSION/MIXER: display line 2 shows the window ("Trk 1-8  Scn 1-4") and
-   follows Left/Right/Up/Down scrolling; NOTE mode still shows the device
-10. Drum: hold Copy, tap source pad, tap empty pad → device copied (toast);
-    releasing Copy mid-gesture cancels (also for SESSION clip copy)
-11. Drum: hold a pad + turn Volume encoder → chain volume (display shows
-    name/value); master volume unaffected while a pad is held
+**Hardware test results v0.5.0 (2026-07-13):**
+- Drum 4×4 was **flipped** (C1 top-left instead of bottom-left) — pad index 0
+  (note 68) is the *bottom*-left row, same as the instrument layout; the
+  `(3-row)` flip was wrong → fixed in v0.6
+- Drum Copy+pad device copy **did not work** → removed in v0.6 (not needed)
+- Mute+pad worked but gave no LED feedback → v0.6 dims muted pads
+- Shift function map lit the step *buttons*; the proper place is the **icon
+  LED row below the steps** (CC 16-31, cf. schwung_shim.c Settings/Tools
+  icons) → moved in v0.6
+- Bars felt obstructive even in MIXER → removed entirely in v0.6
+- Sequencer: user expects Move behavior — pressing a pad shows *that pad's*
+  sequence in the step row for XO editing → v0.6
+
+## Done — v0.6.0 sequencer + browser batch (2026-07-13, untested)
+
+Bitwig-side only, driven by v0.5 hardware feedback:
+
+- [x] **Drum orientation fixed** — pad note 68 = bottom-left; drum index /
+      velocity-level math no longer flips rows (C1 bottom-left, velocity
+      soft→loud bottom→top)
+- [x] **Per-pad XO sequencer (Move-style)** — the step row now shows the
+      sequence of the *selected* note (last played pad; Shift+pad selection
+      follows too): white = selected note on that step, dim white = other
+      notes there, green = playhead. Step taps toggle that note (unchanged).
+- [x] **Drum pad copy/paste removed** (didn't work on hardware, not needed)
+- [x] **Muted drum pads dim** — pad LED at ~12% color while muted
+      (`pad.mute()` observed)
+- [x] **Shift map on the icon row** — the Shift+Step function map moved from
+      the step buttons to the icon LEDs below them (CC 16-31); dark when
+      Shift is up, so the step buttons keep showing the sequence
+- [x] **Bars removed entirely** — `updateBars`/BARS no longer sent (protocol
+      cmd 0x06 stays module-side, unused); MIXER knob touch shows the
+      volume name/value contextually like device knobs
+- [x] **Device management (new)** — `MoveBrowser.js` popup-browser control:
+      **Shift+Capture** = add device after current (end of chain if none),
+      **Shift+Jog Click** = replace current device, **Delete+Jog Click** =
+      delete current device. While the browser is open: wheel = browse
+      results, Up/Down = content-type tab, Jog Click = load ("Loaded: X"
+      toast), Back = cancel; display shows tab + selection.
+
+**Hardware test checklist v0.6.0** (Bitwig script only):
+1. Drum: C1 bottom-left, rising left→right then upward; velocity pads
+   soft at bottom, full at top-right
+2. Drum: press different pads → step row switches to that pad's sequence
+   (white); other pads' steps show dim; step taps XO the selected pad
+3. Drum: Mute+pad dims the pad LED immediately; unmute restores color
+4. Hold Shift → icon row *below* the steps lights the function map (green =
+   metronome/groove/full-velocity/overlay on); step buttons unchanged
+      - COMMENT: I dont think that led row is rgb, you can only dim it
+5. No bars anywhere; MIXER knob touch/turn shows volume name + value
+6. Shift+Capture opens the browser (display shows tab + result); wheel
+   scrolls, Up/Down changes tab, click loads, Back cancels
+   - COMMENT: SHIFT plus CAPTURE uses Schwung Skipback saved!
+7. Shift+Jog Click replaces the current device via browser
+8. Delete+Jog Click deletes the current device
+9. Instrument NOTE mode: step row = last played note's steps (white), other
+   notes dim — chord/held-step gestures unchanged 
+   - dim notes is unintuitive, they should not be shown, when nuding those notes it should also only address the currently selected
+10. Drum: held pad + Volume encoder = chain volume (v0.5 item, retest)
 
 ## Infrastructure / platform
 - [ ] **I5 — Shared hardware constants.** Generate/copy one constants file used by both
@@ -241,9 +278,8 @@ Driven by v0.4 hardware feedback:
 - [ ] **F25 — Note repeat** (Shift+Step 11): script-generated repeats while pad held,
       rate menu. Optional / stretch (scheduleTask timing jitter needs a hardware
       feel-test before building the rate menu).
-- [ ] **F27 — VU meters on OLED** via `track.addVuMeterObserver` once display protocol
-      supports widgets. Stretch.
 - [ ] Overview polish: green pulse on blocks containing playing clips.
+- [ ] Drum Pad sequencer should be all on a different lanes, eg. when kick (c1) is active only show the notes for that lane, when changing to another
 
 ## Nice-to-have / research
 
@@ -251,7 +287,6 @@ Driven by v0.4 hardware feedback:
       persists, resume on re-entry (`onResume()` full LED repaint).
 - [ ] Aftertouch → channel pressure to Bitwig NoteInput (Move pads send it; check what
       schwung forwards in overtake mode).
-- [ ] Bitwig popup browser control (wheel = scroll results, click = commit) for inserting
-      devices from the hardware.
+- [x] Bitwig popup browser control — done in v0.6 (`MoveBrowser.js`).
 - [ ] Java port of the controller script — only if JS API 18 becomes a limiter; not
       needed for speed so far.

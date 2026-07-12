@@ -13,7 +13,7 @@
 loadAPI(18);
 host.setShouldFailOnDeprecatedUse(true);
 
-host.defineController("Ableton", "Move", "0.5", "7bc8983f-638b-40ab-8c23-95f4c8697cab", "soße");
+host.defineController("Ableton", "Move", "0.6", "7bc8983f-638b-40ab-8c23-95f4c8697cab", "soße");
 host.defineMidiPorts(1, 1);
 host.addDeviceNameBasedDiscoveryPair(["Ableton Move"], ["Ableton Move"]);
 
@@ -26,6 +26,7 @@ load("MoveMixer.js");
 load("MoveNavigation.js");
 load("MoveTrackControls.js");
 load("MoveNotes.js");
+load("MoveBrowser.js");
 
 // Global states
 var midiIn = null;
@@ -68,6 +69,7 @@ function init() {
     MoveTrackControls.init(host, MoveNavigation.cursorTrack,
         MoveNavigation.trackBank.sceneBank(), MoveNavigation.trackBank);
     MoveNotes.init(host, midiIn, MoveNavigation.cursorTrack, MoveNavigation.cursorDevice);
+    MoveBrowser.init(host, MoveNavigation.cursorTrack, MoveNavigation.cursorDevice);
 
     MoveProtocol.text(1, "Bitwig Move");
     MoveProtocol.text(2, "Initialized");
@@ -109,9 +111,8 @@ function onMidi0(status, data1, data2) {
             case MoveHardware.CC.COPY:
                 modifiers.copy = (data2 > 64);
                 if (!modifiers.copy) {
-                    // Release abandons pending Copy+Pad gestures
+                    // Release abandons a pending Copy+Pad gesture
                     MoveGrid.copySource = null;
-                    MoveNotes.drumCopySource = -1;
                 }
                 // Loop held + Copy = double the clip content (Move-style)
                 if (modifiers.copy && modifiers.loop) {
@@ -152,8 +153,11 @@ function onMidi0(status, data1, data2) {
         }
     }
 
-    // 2. CC handlers (overlay, Transport, Track Controls, mode module, Navigation)
+    // 2. CC handlers (browser, overlay, Transport, Track Controls, mode
+    //    module, Navigation)
     if (msgType === 0xB0) {
+        if (MoveBrowser.isOpen()
+            && MoveBrowser.handleCC(data1, data2, modifiers)) return;
         if (ui.mode === "note" && MoveNotes.overlayActive
             && MoveNotes.handleOverlayCC(data1, data2)) return;
         if (MoveTransport.handleCC(data1, data2, modifiers)) return;
@@ -246,25 +250,29 @@ function handleShiftStep(stepIdx) {
 }
 
 /**
- * Step LEDs while Shift is held: dim white = has a function, green = the
- * toggle is currently on, black = unassigned. Mirrors handleShiftStep.
+ * Icon LEDs below the step buttons (CC 16-31, one per step — the row schwung
+ * itself uses for the Settings/Tools icons). While Shift is held they show
+ * the Shift+Step function map: dim white = has a function, green = the
+ * toggle is currently on. Dark when Shift is up. Mirrors handleShiftStep.
  */
 function updateShiftStepLEDs() {
     var C = MoveHardware.COLOR;
     var colors = {};
-    colors[2] = C.WHITE;                                       // quantize amount
-    colors[5] = MoveTransport.transport.isMetronomeEnabled().get()
-        ? C.GREEN : C.HAS_CLIP;                                // metronome
-    colors[6] = (MoveTransport.groove.getEnabled().get() > 0.5)
-        ? C.GREEN : C.HAS_CLIP;                                // groove
-    if (ui.mode === "note") {
-        colors[8] = MoveNotes.overlayActive ? C.GREEN : C.HAS_CLIP; // scale overlay
+    if (modifiers.shift) {
+        colors[2] = C.WHITE;                                       // quantize amount
+        colors[5] = MoveTransport.transport.isMetronomeEnabled().get()
+            ? C.GREEN : C.HAS_CLIP;                                // metronome
+        colors[6] = (MoveTransport.groove.getEnabled().get() > 0.5)
+            ? C.GREEN : C.HAS_CLIP;                                // groove
+        if (ui.mode === "note") {
+            colors[8] = MoveNotes.overlayActive ? C.GREEN : C.HAS_CLIP; // scale overlay
+        }
+        colors[9] = MoveNotes.fullVelocity ? C.GREEN : C.HAS_CLIP; // full velocity
+        colors[14] = C.HAS_CLIP;                                   // double content
+        colors[15] = C.HAS_CLIP;                                   // quantize clip
     }
-    colors[9] = MoveNotes.fullVelocity ? C.GREEN : C.HAS_CLIP; // full velocity
-    colors[14] = C.HAS_CLIP;                                   // double content
-    colors[15] = C.HAS_CLIP;                                   // quantize clip
     for (var i = 0; i < 16; i++) {
-        MoveProtocol.ledNote(MoveHardware.NOTES.STEP_FIRST + i,
+        MoveProtocol.ledCC(16 + i,
             colors[i] !== undefined ? colors[i] : C.BLACK);
     }
 }
@@ -286,18 +294,19 @@ function flush() {
     } else {
         MoveGrid.updateLEDs(blinkPhase, ui.overview);
     }
-    // Shift held: step LEDs show the Shift+Step functions (green = on)
-    if (modifiers.shift) updateShiftStepLEDs();
+    // Icon row below the steps (CC 16-31): Shift+Step function map while
+    // Shift is held, dark otherwise
+    updateShiftStepLEDs();
     MoveTrackControls.updateLEDs();
     if (ui.mode === "mixer") MoveMixer.updateKnobLEDs();
     else MoveNavigation.updateLEDs();
-    if (ui.mode === "note" && MoveNotes.overlayActive) {
+    if (MoveBrowser.isOpen()) {
+        MoveBrowser.updateDisplay();
+    } else if (ui.mode === "note" && MoveNotes.overlayActive) {
         MoveNotes.updateOverlayDisplay();
     } else {
         MoveNavigation.updateDisplay();
     }
-    // Parameter bars while a knob is touched (mixer: track volumes)
-    MoveNavigation.updateBars(ui.mode === "mixer");
     // Menu button LED shows the mode (bright = NOTE, dim = MIXER)
     var menuLed = 0;
     if (ui.mode === "note") menuLed = 127;

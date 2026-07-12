@@ -38,6 +38,7 @@ var MoveNavigation = {
         this.cursorTrack.volume().name().markInterested();
         this.cursorTrack.volume().value().displayedValue().markInterested();
         this.cursorDevice.name().markInterested();
+        this.cursorDevice.exists().markInterested();
         this.cursorDevice.isEnabled().markInterested();
         this.cursorDevice.isExpanded().markInterested();
         this.masterTrack.volume().name().markInterested();
@@ -195,7 +196,16 @@ var MoveNavigation = {
         }
         if (cc === MoveHardware.CC.JOG_CLICK) {
             if (value !== 127) return true;
-            if (modifiers.mute) {
+            if (modifiers.del) {
+                // Delete + click = delete the current device
+                if (this.cursorDevice.exists().get()) {
+                    this.cursorDevice.deleteObject();
+                    this.toast("Device deleted");
+                }
+            } else if (modifiers.shift) {
+                // Shift + click = browse to replace the current device
+                MoveBrowser.replaceDevice();
+            } else if (modifiers.mute) {
                 this.cursorDevice.isEnabled().toggle();
                 modifiers.muteUsed = true;
                 this.toast("Device on/off");
@@ -266,21 +276,4 @@ var MoveNavigation = {
         return true;
     },
 
-    /**
-     * 8 volume bars on the display's lower half while a knob is touched —
-     * MIXER mode only. Device knobs are contextual instead: the touched
-     * parameter's name/value on the display (the rings show the rest).
-     */
-    updateBars: function (mixerMode) {
-        if (!mixerMode || this.touchMask === 0) {
-            MoveProtocol.bars(null);
-            return;
-        }
-        var values = [];
-        for (var i = 0; i < 8; i++) {
-            var track = this.trackBank.getItemAt(i);
-            values[i] = track.exists().get() ? track.volume().value().get() : 0;
-        }
-        MoveProtocol.bars(values);
-    }
 };

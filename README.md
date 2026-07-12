@@ -27,11 +27,10 @@ The link is supervised: Bitwig pings every second; the module shows
 "Waiting for Bitwig…" and clears LEDs when the link drops, and full state is resent on
 reconnect.
 
-## Current Status: v0.5 — 4×4 drums, Loop Mode, contextual display, **pending hardware test**
+## Current Status: v0.6 — per-pad XO sequencer, device browser, **pending hardware test**
 
-See the hardware test checklist in TODO.md. v0.5 is Bitwig-side only (the
-module is unchanged since 0.4.0 — but if you haven't deployed 0.4.0 yet,
-redeploy for the BARS display command).
+See the hardware test checklist in TODO.md. v0.6 is Bitwig-side only (the
+module is unchanged since 0.4.0).
 
 ## Control Reference
 
@@ -59,11 +58,12 @@ pressing one jumps the window there).
 | **LOOP (tap)**   | Toggle arranger loop          | Lit = loop on     |
 | **LOOP (hold)**  | Loop Mode (NOTE mode, see below) |                |
 | **CAPTURE**      | Tap tempo                     |                   |
+| **Shift + CAPTURE** | Add device (opens browser) |                   |
 | **Shift + Wheel**| Tempo (1 BPM / detent)        |                   |
 
 ### Shift + Step actions
-While Shift is held the step LEDs show the map: dim white = has a function,
-green = that toggle is on, black = unassigned.
+While Shift is held the **icon LEDs below the steps** show the map: dim
+white = has a function, green = that toggle is on.
 
 | Combo               | Action                            |
 | :------------------ | :-------------------------------- |
@@ -119,7 +119,7 @@ In SESSION and MIXER the display's second line shows the window position
 |                    | Sounding pads light green                           |
 | **Up / Down**      | Octave ±1 (toast shows octave; drum: pad window ±16, Shift = ±4) |
 | **Shift + U / D**  | Shift in-key layout ±1 scale degree                 |
-| **Steps 1-16**     | Tap: toggle step for the last played note           |
+| **Steps 1-16**     | Tap: XO-toggle the selected note (last played pad)  |
 | **Pads held + Step** | Write the held chord into that step               |
 | **Step held + Pads** | Play pads to write them into the held step        |
 | **Step held + Vol**| Velocity of all notes in that step                  |
@@ -127,7 +127,9 @@ In SESSION and MIXER the display's second line shows the window position
 | **Step held + L / R** | Nudge notes one step left / right                |
 | **Step held + U / D** | Transpose ±1 semitone (Shift = ±12)              |
 | **Left / Right**   | Step-sequencer page                                 |
-| Step LEDs          | White = has notes, green = playhead                 |
+| Step LEDs          | White = selected note on that step, dim = other     |
+|                    | notes, green = playhead (Move-style: press a pad to |
+|                    | see and edit *its* sequence)                        |
 
 #### Loop Mode (hold Loop)
 While Loop is held, each step button = one bar; step LEDs show the clip loop
@@ -148,10 +150,11 @@ the rack). The **right 4×4** is 16 fixed velocity levels for the last played
 pad (bottom-left = soft, top-right = full; current level lit green) — taps
 also write into a held step, and step taps use the chosen velocity.
 
-**Shift + Pad** selects the drum pad (name on OLED), **Mute + Pad**
-mutes/unmutes it, **Copy + Pad, Pad** (while holding Copy) copies the first
-pad's device onto the second, **held Pad + Volume encoder** adjusts that
-pad's chain volume. Up/Down moves the 16-pad window (toast shows the range).
+**Shift + Pad** selects the drum pad (name on OLED, step row follows),
+**Mute + Pad** mutes/unmutes it (muted pads are dimmed), **held Pad +
+Volume encoder** adjusts that pad's chain volume. Up/Down moves the 16-pad
+window (toast shows the range). Pressing a pad shows its sequence in the
+step row for XO editing.
 
 #### Key & Scale overlay (Shift + Step 9)
 | Control          | Action                                  |
@@ -177,7 +180,7 @@ white, out-of-scale = off.
 | **Pad row 3**      | Toggle mute                               | Orange = muted           |
 | **Pad row 4 (bot)**| Select track                              | White = selected         |
 | **Steps**          | Same as SESSION (select / stop / stop all)|                          |
-| **Knob touch**     | Show 8 volume bars on the display         |                          |
+| **Knob touch**     | Show that track's volume on the display   |                          |
 
 ### Navigation
 | Control            | Action                                      |
@@ -189,6 +192,9 @@ white, out-of-scale = off.
 | **Jog Wheel**      | Select previous / next device               |
 | **Jog Click**      | Fold / unfold device                        |
 | **Mute + Click**   | Toggle device on/off                        |
+| **Shift + Click**  | Replace current device (opens browser)      |
+| **Delete + Click** | Delete current device                       |
+| **Shift + Capture**| Add a device after the current one (browser)|
 
 ### Device & Parameters
 | Control                 | Action                         | Feedback                     |
@@ -197,6 +203,17 @@ white, out-of-scale = off.
 | **Knob Touch**          | Focus parameter                | Its name & value while touched (rings show the rest) |
 | **Delete + Knob Touch** | Reset parameter                |                              |
 | **Master Knob Touch**   | Focus master volume            | Name & value                 |
+
+### Device Browser (Shift+Capture = add, Shift+Jog Click = replace)
+While the Bitwig popup browser is open, the display shows the current tab
+and selection:
+
+| Control       | Action                                   |
+| :------------ | :--------------------------------------- |
+| **Jog Wheel** | Previous / next result                   |
+| **Up / Down** | Content-type tab (Devices, Presets, …)   |
+| **Jog Click** | Load the selection                       |
+| **Back**      | Cancel                                   |
 
 ## Installation
 

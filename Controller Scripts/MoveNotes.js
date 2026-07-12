@@ -25,8 +25,6 @@ var MoveNotes = {
     overlayActive: false,   // Key & Scale overlay (Shift+Step 9)
     drumScrollPos: 36,      // first drum pad note in the bank window (16 pads)
     drumVelocity: 100,      // fixed velocity from the right-half level pads
-    drumCopySource: -1,     // Copy+pad source (bank index), -1 = none
-    padDeviceBanks: [],     // 1-device bank per drum pad (Copy+pad device copy)
     heldDrumPad: -1,        // held left-half pad (bank index): +Volume = chain vol
 
     SCALES: [
@@ -79,8 +77,7 @@ var MoveNotes = {
             pad.exists().markInterested();
             pad.color().markInterested();
             pad.name().markInterested();
-            this.padDeviceBanks[i] = pad.createDeviceBank(1);
-            this.padDeviceBanks[i].getDevice(0).exists().markInterested();
+            pad.mute().markInterested();
             pad.volume().name().markInterested();
             pad.volume().value().displayedValue().markInterested();
         }
@@ -146,9 +143,10 @@ var MoveNotes = {
         return this.ROOT_NAMES[key % 12] + (Math.floor(key / 12) - 2);
     },
 
-    /** Drum-bank index (0-15) for a left-half pad index, bottom-left = 0. */
+    /** Drum-bank index (0-15) for a left-half pad index, bottom-left = 0.
+     *  (Pad index 0 = note 68 = bottom-left row, like the instrument layout.) */
     drumIndexForPad: function (p) {
-        return (3 - Math.floor(p / 8)) * 4 + (p % 8);
+        return Math.floor(p / 8) * 4 + (p % 8);
     },
 
     /** Sounding key for pad index 0-31 (may be out of MIDI range). */
@@ -159,7 +157,7 @@ var MoveNotes = {
             // Left 4x4 = drum pads (bottom-left = lowest); right half is
             // velocity levels, silent in the translation table.
             if (col >= 4) return -1;
-            return this.drumScrollPos + (3 - row) * 4 + col;
+            return this.drumScrollPos + row * 4 + col;
         }
         if (this.chromatic) {
             // Rows of fourths (+5 semitones per row)
@@ -429,7 +427,7 @@ var MoveNotes = {
             if (this.drumMode && (note - 68) % 8 >= 4) {
                 if (isNoteOn) {
                     var lvRow = Math.floor((note - 68) / 8);
-                    var level = (3 - lvRow) * 4 + ((note - 68) % 8 - 4);
+                    var level = lvRow * 4 + ((note - 68) % 8 - 4);
                     this.drumVelocity = Math.round((level + 1) * 127 / 16);
                     this.cursorTrack.playNote(this.lastPlayedKey, this.drumVelocity);
                     if (this.heldStep >= 0 && this.cursorClip.exists().get()) {
@@ -447,28 +445,12 @@ var MoveNotes = {
                 if (this.drumMode) {
                     var padIdx2 = this.drumIndexForPad(note - 68);
                     var padItem = this.drumPadBank.getItemAt(padIdx2);
-                    if (modifiers.copy) {
-                        // Copy+pad, then pad: copy the pad's device (F17b)
-                        if (this.drumCopySource < 0) {
-                            this.drumCopySource = padIdx2;
-                            MoveNavigation.toast("Copy pad: choose target");
-                        } else {
-                            var srcDev = this.padDeviceBanks[this.drumCopySource]
-                                .getDevice(0);
-                            if (srcDev.exists().get()) {
-                                padItem.startOfDeviceChainInsertionPoint()
-                                    .copyDevices(srcDev);
-                                MoveNavigation.toast("Pad device copied");
-                            } else {
-                                MoveNavigation.toast("Source pad empty");
-                            }
-                            this.drumCopySource = -1;
-                        }
-                        return true;
-                    }
                     if (modifiers.shift) {
                         padItem.selectInEditor();
+                        // Step row follows the selected pad's sequence
+                        if (key >= 0) this.lastPlayedKey = key;
                         MoveNavigation.toast(padItem.name().get() || "Pad");
+                        host.requestFlush();
                         return true;
                     }
                     if (modifiers.mute) {
@@ -578,7 +560,7 @@ var MoveNotes = {
                 note = 68 + i;
                 if (i % 8 >= 4) {
                     // Right 4x4: velocity levels; current level lit green
-                    var lvl = (3 - Math.floor(i / 8)) * 4 + (i % 8 - 4);
+                    var lvl = Math.floor(i / 8) * 4 + (i % 8 - 4);
                     var lvlVel = Math.round((lvl + 1) * 127 / 16);
                     color = (lvlVel === this.drumVelocity)
                         ? MoveHardware.COLOR.GREEN : MoveHardware.COLOR.HAS_CLIP;
@@ -590,8 +572,12 @@ var MoveNotes = {
                         color = MoveHardware.COLOR.GREEN; // sounding
                     } else if (pad.exists().get()) {
                         var c = pad.color();
-                        color = MoveHardware.nearestColor(c.red() * 0.6, c.green() * 0.6, c.blue() * 0.6);
-                        if (color === 0) color = MoveHardware.COLOR.HAS_CLIP; // uncolored pads: dim white
+                        var dim = pad.mute().get() ? 0.12 : 0.6; // muted = dimmed
+                        color = MoveHardware.nearestColor(c.red() * dim, c.green() * dim, c.blue() * dim);
+                        if (color === 0) {
+                            color = pad.mute().get()
+                                ? 76 : MoveHardware.COLOR.HAS_CLIP; // dark fallback
+                        }
                     }
                 }
                 MoveProtocol.ledNote(note, color);
@@ -620,12 +606,15 @@ var MoveNotes = {
             }
         }
 
-        // Steps: white = has notes, green = playhead
+        // Steps show the *selected* note's sequence (last played / selected
+        // pad, Move-style XO): white = selected note here, dim = other notes,
+        // green = playhead.
         var playing = this.cursorClip.playingStep().get(); // -1 when not playing
         for (i = 0; i < 16; i++) {
             note = MoveHardware.NOTES.STEP_FIRST + i;
             if (i === playing) color = MoveHardware.COLOR.GREEN;
-            else if (this.stepCount[i] > 0) color = MoveHardware.COLOR.WHITE;
+            else if (this.stepHas[i + "_" + this.lastPlayedKey]) color = MoveHardware.COLOR.WHITE;
+            else if (this.stepCount[i] > 0) color = MoveHardware.COLOR.HAS_CLIP;
             else color = MoveHardware.COLOR.BLACK;
             MoveProtocol.ledNote(note, color);
         }

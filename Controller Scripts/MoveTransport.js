@@ -88,6 +88,11 @@ var MoveTransport = {
         }
 
         if (cc === MoveHardware.CC.CAPTURE) {
+            if (modifiers.shift) {
+                // Shift+Capture: browse to add a device after the current one
+                MoveBrowser.addDevice();
+                return true;
+            }
             // Bitwig has no Capture-MIDI API; Capture = tap tempo instead.
             this.transport.tapTempo();
             MoveNavigation.toast("Tap: " + this.transport.tempo().displayedValue().get());
