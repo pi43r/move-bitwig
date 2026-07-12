@@ -7,6 +7,7 @@
 var MoveTransport = {
     transport: null,
     application: null,
+    groove: null,
 
     init: function (host) {
         this.transport = host.createTransport();
@@ -15,7 +16,24 @@ var MoveTransport = {
         this.transport.isArrangerRecordEnabled().markInterested();
         this.transport.isClipLauncherOverdubEnabled().markInterested();
         this.transport.isMetronomeEnabled().markInterested();
+        this.transport.isArrangerLoopEnabled().markInterested();
         this.transport.tempo().displayedValue().markInterested();
+        this.groove = host.createGroove();
+        this.groove.getEnabled().markInterested();
+    },
+
+    /** Shift+Step 7: global groove on/off. Returns the new state. */
+    toggleGroove: function () {
+        var on = this.groove.getEnabled().get() > 0.5;
+        this.groove.getEnabled().set(on ? 0 : 1);
+        return !on;
+    },
+
+    /** Loop tap (no gesture used while held): arranger loop on/off. */
+    toggleArrangerLoop: function () {
+        this.transport.isArrangerLoopEnabled().toggle();
+        MoveNavigation.toast(this.transport.isArrangerLoopEnabled().get()
+            ? "Arranger loop off" : "Arranger loop on"); // value not yet flipped
     },
 
     /**
@@ -26,8 +44,12 @@ var MoveTransport = {
         // green when playing, red when recording.
         MoveProtocol.ledCC(MoveHardware.CC.PLAY,
             this.transport.isPlaying().get() ? MoveHardware.COLOR.GREEN : 0);
-        MoveProtocol.ledCC(MoveHardware.CC.REC,
-            this.transport.isArrangerRecordEnabled().get() ? MoveHardware.COLOR.RED : 0);
+        // Rec follows what plain Rec toggles in the current mode (F21):
+        // launcher overdub in NOTE mode, arranger record elsewhere.
+        var recOn = (ui.mode === "note")
+            ? this.transport.isClipLauncherOverdubEnabled().get()
+            : this.transport.isArrangerRecordEnabled().get();
+        MoveProtocol.ledCC(MoveHardware.CC.REC, recOn ? MoveHardware.COLOR.RED : 0);
     },
 
     /**
@@ -46,8 +68,13 @@ var MoveTransport = {
         }
 
         if (cc === MoveHardware.CC.REC) {
-            if (modifiers.shift) {
+            // F21: NOTE mode records pad playing into the clip (launcher
+            // overdub); Shift swaps to the other record target.
+            var overdub = (ui.mode === "note") !== modifiers.shift;
+            if (overdub) {
                 this.transport.isClipLauncherOverdubEnabled().toggle();
+                MoveNavigation.toast(this.transport.isClipLauncherOverdubEnabled().get()
+                    ? "Overdub off" : "Overdub on"); // observer not yet flipped
             } else {
                 this.transport.isArrangerRecordEnabled().toggle();
             }

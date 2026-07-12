@@ -98,6 +98,68 @@ Move's native **RGB LED sysex** (`F0 00 21 1D 01 01 3B 10 …`), discovered in
 11. Held step + Volume = velocity, + wheel = length; tap still toggles
 12. Shift+Step 6/10/15/16 actions; Shift+wheel = tempo; Capture = tap tempo
 
+## Done — v0.4.0 modes + gestures batch (2026-07-13, untested)
+
+**⚠ Module changed too (new BARS command) — redeploy `dist/` to the Move, not just the
+Bitwig script.**
+
+- [x] **F9** — Copy+Pad, then Pad = copy clip between slots
+      (`slot.replaceInsertionPoint().copySlotsOrScenes(src)`); toast guides the gesture
+- [x] **F12** — Session Overview (Shift+Menu, SESSION only): each pad = 8×4 block,
+      white = current window, dim = in project bounds; choosing a block exits overview
+- [x] **F15b (chromatic)** — chromatic layout (rows of fourths), toggled in the overlay;
+      LEDs: root pads = track color, in-scale = dim white, out-of-scale = off
+- [x] **F16** — Key & Scale overlay (Shift+Step 9, NOTE mode): wheel = root,
+      Up/Down = scale (10 scales), click = chromatic/in-key, Back or Shift+Step 9 = close;
+      pads keep sounding for auditioning
+- [x] **F17b (partial)** — drum gestures: Shift+pad = select pad (name toast),
+      Mute+pad = pad mute. (Copy+pad device copy still open.)
+- [x] **F19b (partial)** — held step + Left/Right = nudge ±1 step, + Up/Down = transpose
+      ±1 semitone (Shift = ±12). (Multi-key steps per column still open.)
+- [x] **F20** — Loop button: hold + step = loop length in bars (step n = n bars),
+      hold + wheel = loop length ±1 bar (Shift = 1/16th steps), tap = arranger loop
+      toggle; Loop LED follows arranger loop
+- [x] **F22b (groove)** — Shift+Step 7 = global groove on/off (`host.createGroove()`)
+- [x] **F23 (bars)** — new protocol cmd `BARS (0x06)`: 8 value bars on the display's
+      lower half while any knob is touched (remote values; track volumes in MIXER)
+- [x] **F26** — MIXER mode (Menu cycles session→note→mixer, Menu LED dim in mixer):
+      knobs = 8 track volumes (Shift = fine, Delete+touch = reset), pad rows top→bottom =
+      arm / solo / mute / select, steps keep SESSION select/stop behavior
+- [x] **Oklab color matching** — perceptual palette matching (`USE_OKLAB` flag to revert);
+      [0,0,0] placeholder palette rows excluded from the search
+- [x] **F21** — NOTE mode: Rec = launcher overdub toggle (records pad playing into the
+      clip); Shift+Rec = arranger record. Other modes stay reversed. Rec LED follows
+      whichever plain Rec toggles in the current mode
+- [x] **F19b (chords)** — held pads + step tap writes the whole chord; held step +
+      played pads writes them into that step immediately (Push-style, keeps velocity)
+- [x] **F15b (sounding pads)** — pads light green while held/sounding (instrument
+      incl. duplicate positions, and drum layout)
+- [x] **F26b (pan)** — MIXER: Mute-held + knob = track pan (Shift = fine); knob rings
+      show track color at volume brightness instead of remote values
+- [x] **F22b (quantize amount)** — Shift+Step 3 cycles 100% → 50% → 75%; Shift+Step 16
+      quantizes with the chosen amount
+- [x] **F15b (degree shift)** — Shift+Up/Down shifts the in-key layout ±1 scale degree
+      (clamped ±14, toast; chromatic layout keeps plain octave behavior)
+
+**Hardware test checklist v0.4.0** (after redeploying module + script):
+1. Module handshake still ok; knob-touch shows 8 bars on display bottom, hides on release
+2. Menu cycles SESSION → NOTE → MIXER (toasts; Menu LED off/bright/dim)
+3. MIXER: knobs move volumes, pad rows arm/solo/mute/select, bars = volumes while touched
+4. Shift+Menu = overview; white block = window, pad jumps + exits; works from any mode
+5. Copy+Pad then Pad copies a clip; Delete+Pad still deletes
+6. NOTE: Shift+Step 9 overlay → wheel root, Up/Down scale, click chromatic, Back closes;
+   pad layout + root LEDs follow; chromatic LEDs show in-scale pads
+7. Held step + Left/Right nudges, + Up/Down transposes (Shift = octave)
+8. Loop tap toggles arranger loop (LED); Loop+step = n bars; Loop+wheel = length
+9. Shift+Step 7 groove toggle (check Groove panel in Bitwig)
+10. Drum mode: Shift+pad selects (toast name), Mute+pad mutes the pad
+11. Pad/track colors look closer to Bitwig's (Oklab) — if worse, set `USE_OKLAB = false`
+12. NOTE: Rec toggles overdub (toast + LED), Shift+Rec arranger record; pads write into
+    a held step; holding a chord + step tap writes all notes; held pads light green
+13. MIXER: Mute+knob = pan; rings = track color, brightness = volume
+14. Shift+Step 3 cycles quantize amount (toast); Shift+Step 16 uses it
+15. NOTE (in-key): Shift+Up/Down shifts layout by a scale degree (root LEDs move)
+
 ## Infrastructure / platform
 - [ ] **I5 — Shared hardware constants.** Generate/copy one constants file used by both
       `src/ui.js` and `Controller Scripts/MoveHardware.js` so CC numbers can't drift.
@@ -111,48 +173,20 @@ Move's native **RGB LED sysex** (`F0 00 21 1D 01 01 3B 10 …`), discovered in
       kept for CC-addressed LEDs only (track row 40-43, Sample 118, knob rings 71-78).
 - [x] **I10 — Knob-ring value feedback** — rings 71-78 show macro values as brightness.
 
-## Phase 3 — Session mode completion
+## Remaining features
 
-- [ ] **F9 — Copy+Pad → Pad clip copy/paste** (`slot.duplicateClip()` / clip content copy),
-      Copy+scene = duplicate scene. (Needs API research: cross-slot copy target.)
-- [ ] **F12 — Session Overview sub-mode** (Shift+Menu): each pad = 8×4 block via
-      `trackBank.scrollPosition()` math; dim = has clips, white = current window,
-      green pulse = playing block.
-
-## Phase 4 — Note mode & step sequencer (remaining)
-
-- [ ] **F15b — Instrument layout polish**: chromatic option, Shift+Up/Down = shift by
-      scale degree, highlight pads currently sounding.
-- [ ] **F16 — Key & scale menu** (Shift+Step 9): root + scale + in-key/chromatic; feeds
-      layout and pad LEDs (scale/root state exists in `MoveNotes`).
-- [ ] **F17b — Drum sub-mode gestures**: Mute+pad = pad mute, Shift+pad = select pad
-      (shows chain on OLED), Copy+pad = copy device between pads.
-- [ ] **F19b — Step editing extras**: held step + Left/Right = nudge, + Up/Down =
-      transpose; multiple held pads add several notes per step (currently only
-      last-played key).
-- [ ] **F20 — Loop mode** (Loop button): steps = bars, wheel = loop length
-      (Shift = 16th increments). (Double-content and quantize already live on
-      Shift+Step 15/16.)
-- [ ] **F21 — Note-mode record**: Rec records into selected/next slot
-      (`transport.isClipLauncherOverdubEnabled` for overdub).
-
-## Phase 5 — Settings menus & polish
-
-- [ ] **F22b — Settings menus**: groove/shuffle (Shift+Step 7, `host.createGroove()`),
-      quantize-amount setting (Shift+Step 3), key & scale menu (Shift+Step 9 = F16).
-      Simple toggles (metronome, full velocity, tempo) are already done as actions.
-- [ ] **F23 — Display layout v2**: header (mode + window pos), 8 param mini-bars, volume
-      bar while Volume touched. Needs protocol extension (SPEC §2.2/§5.6).
+- [ ] **F17b (rest)** — Copy+pad = copy device between drum pads.
+- [ ] **F23 (rest)** — display header (mode + window position); volume bar while the
+      Volume knob is touched.
 - [ ] **F25 — Note repeat** (Shift+Step 11): script-generated repeats while pad held,
       rate menu. Optional / stretch.
-- [ ] **F26 — Mixer mode** (Bitwig extra): knobs = 8 track volumes or sends, steps =
-      select/stop, pads row = mute/solo/arm per track. Stretch.
+- [ ] **F26c — Mixer sends layer** (needs a sends bank + a free modifier).
 - [ ] **F27 — VU meters on OLED** via `track.addVuMeterObserver` once display protocol
       supports widgets. Stretch.
+- [ ] Overview polish: green pulse on blocks containing playing clips.
 
 ## Nice-to-have / research
 
-- [ ] Perceptual color matching (Oklab) if palette mismatches annoy in practice.
 - [ ] `suspend_keeps_js` + Back handling: jump back to Move browser while Bitwig link
       persists, resume on re-entry (`onResume()` full LED repaint).
 - [ ] Aftertouch → channel pressure to Bitwig NoteInput (Move pads send it; check what

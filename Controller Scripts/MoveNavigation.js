@@ -18,6 +18,7 @@ var MoveNavigation = {
     trackSelected: [],      // per bank track: selected in editor (8)
     toastText: null,
     toastUntil: 0,
+    touchMask: 0,           // bitmask of touched knobs 1-8 (notes 0-7)
 
     init: function (host) {
         this.trackBank = host.createMainTrackBank(8, 2, 4);
@@ -25,6 +26,12 @@ var MoveNavigation = {
         this.cursorDevice = this.cursorTrack.createCursorDevice();
         this.remoteControls = this.cursorDevice.createCursorRemoteControlsPage(8);
         this.masterTrack = host.createMasterTrack(0);
+
+        // Window position/size (Session Overview needs these)
+        this.trackBank.scrollPosition().markInterested();
+        this.trackBank.itemCount().markInterested();
+        this.trackBank.sceneBank().scrollPosition().markInterested();
+        this.trackBank.sceneBank().itemCount().markInterested();
 
         // Observers for OLED metadata
         this.cursorTrack.name().markInterested();
@@ -216,24 +223,53 @@ var MoveNavigation = {
     /**
      * Handle knob touches (notes 0-9)
      */
-    handleTouch: function (status, note, velocity, modifiers) {
+    handleTouch: function (status, note, velocity, modifiers, mixerMode) {
         if (note > 9) return false;
 
         var isPress = ((status & 0xF0) === 0x90 && velocity > 0);
+        if (note <= 7) {
+            if (isPress) this.touchMask |= (1 << note);
+            else this.touchMask &= ~(1 << note);
+        }
         if (isPress) {
             if (note <= 7) {
-                var rc = this.remoteControls.getParameter(note);
+                var param = mixerMode
+                    ? this.trackBank.getItemAt(note).volume()
+                    : this.remoteControls.getParameter(note);
                 if (modifiers.del) {
-                    rc.reset(); // Delete + knob tap = reset parameter
+                    param.reset(); // Delete + knob tap = reset parameter
                     this.toast("Param reset");
                 }
-                this.activeParameter = rc;
+                this.activeParameter = param;
             } else if (note === 8) {
                 this.activeParameter = this.masterTrack.volume();
             }
-            host.requestFlush();
         }
-        // activeParameter intentionally stays after release ("sticky")
+        // activeParameter intentionally stays after release ("sticky");
+        // flush on release too so the bars overlay hides again.
+        host.requestFlush();
         return true;
+    },
+
+    /**
+     * Parameter bars on the display's lower half while any knob is touched
+     * (called from flush). Mixer mode shows the 8 track volumes instead.
+     */
+    updateBars: function (mixerMode) {
+        if (this.touchMask === 0) {
+            MoveProtocol.bars(null);
+            return;
+        }
+        var values = [];
+        for (var i = 0; i < 8; i++) {
+            if (mixerMode) {
+                var track = this.trackBank.getItemAt(i);
+                values[i] = track.exists().get() ? track.volume().value().get() : 0;
+            } else {
+                var rc = this.remoteControls.getParameter(i);
+                values[i] = rc.exists().get() ? rc.value().get() : 0;
+            }
+        }
+        MoveProtocol.bars(values);
     }
 };

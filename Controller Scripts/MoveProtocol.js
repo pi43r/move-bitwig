@@ -30,11 +30,13 @@ var MoveProtocol = (function () {
     var wantCC = [];     // cc -> palette color
     var wantRGB = [];    // idx -> [r7, g7, b7]
     var wantText = ["", "", "", ""];
+    var wantBars = null;     // array of 8 ints 0-127, or null = hidden
     // Sent state (what the device has)
     var sentNote = [];
     var sentCC = [];
     var sentRGB = [];
     var sentText = [null, null, null, null];
+    var sentBars = "-";      // joined string for cheap compare
 
     function hex2(v) {
         var s = v.toString(16);
@@ -56,6 +58,7 @@ var MoveProtocol = (function () {
         sentCC = [];
         sentRGB = [];
         sentText = [null, null, null, null];
+        sentBars = "-";
     }
 
     function schedulePing() {
@@ -130,6 +133,24 @@ var MoveProtocol = (function () {
             wantRGB[idx] = (r7 << 14) | (g7 << 7) | b7; // pack for cheap compare
         },
 
+        /**
+         * Show 8 parameter bars on the lower display half (replaces text
+         * lines 3+4 while active). values = array of 8 numbers 0.0-1.0,
+         * or null to hide the bars again.
+         */
+        bars: function (values) {
+            if (values === null || values === undefined) {
+                wantBars = null;
+                return;
+            }
+            var out = [];
+            for (var i = 0; i < 8; i++) {
+                var v = values[i] || 0;
+                out[i] = Math.max(0, Math.min(127, Math.round(v * 127)));
+            }
+            wantBars = out;
+        },
+
         /** Display line 1-4. */
         text: function (line, str) {
             if (str === null || str === undefined) str = "";
@@ -193,6 +214,13 @@ var MoveProtocol = (function () {
                 }
             }
             if (payload.length > 0) sendCmd(0x04, payload);
+
+            // BARS diff
+            var barsKey = wantBars === null ? "" : wantBars.join(",");
+            if (barsKey !== sentBars) {
+                sendCmd(0x06, wantBars === null ? [] : wantBars);
+                sentBars = barsKey;
+            }
 
             // TEXT diffs
             for (i = 0; i < 4; i++) {

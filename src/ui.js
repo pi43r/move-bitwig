@@ -22,6 +22,8 @@
  *                                             firmware does — the sysex idx space is
  *                                             flat and CCs own their numbers.
  *   0x05 CLEAR                                all LEDs off (progressive)
+ *   0x06 BARS  <8 x value 0-127>              show 8 parameter bars on the lower
+ *                                             display half; empty payload hides
  *   0x7E HELLO <protoVersion>                 handshake; module replies HELLO_ACK
  *
  * Module -> Bitwig commands:
@@ -54,6 +56,7 @@ const CMD_LED_NOTE = 0x02;
 const CMD_LED_CC = 0x03;
 const CMD_LED_RGB = 0x04;
 const CMD_CLEAR = 0x05;
+const CMD_BARS = 0x06;
 const CMD_HELLO = 0x7E;
 const CMD_PONG = 0x40;
 const CMD_HELLO_ACK = 0x41;
@@ -96,6 +99,7 @@ const LINK_TIMEOUT_MS = 4000;
 
 const state = {
     lines: ["", "", "", ""],
+    bars: null,           // array of 8 values 0-127, or null (text lines 3+4 shown)
     connected: false,
     lastRxMs: 0,
     /* outgoing packet queue: flat array of [head, b1, b2, b3] packets */
@@ -236,6 +240,10 @@ function handleSysexMessage(msg) {
         case CMD_CLEAR:
             startLedClear();
             break;
+
+        case CMD_BARS:
+            state.bars = (payload.length >= 8) ? payload.slice(0, 8) : null;
+            break;
     }
 }
 
@@ -342,6 +350,20 @@ function drawUI() {
     }
     print(2, 2, state.lines[0], 1);
     print(2, 18, state.lines[1], 1);
+
+    if (state.bars) {
+        /* 8 parameter bars in the lower display half (y 34..62) */
+        for (let i = 0; i < 8; i++) {
+            const v = state.bars[i];
+            const x = 4 + i * 15;
+            const h = Math.max(1, Math.round((v / 127) * 26));
+            fill_rect(x, 62 - h, 11, h, 1);
+            /* baseline tick so empty params are still visible */
+            fill_rect(x, 62, 11, 1, 1);
+        }
+        return;
+    }
+
     print(2, 34, state.lines[2], 1);
     print(2, 50, state.lines[3], 1);
 }
@@ -350,6 +372,7 @@ function drawUI() {
 
 globalThis.init = function () {
     state.lines = ["", "", "", ""];
+    state.bars = null;
     state.connected = false;
     state.lastRxMs = 0;
     state.txQueue = [];
@@ -364,6 +387,7 @@ globalThis.tick = function () {
 
     if (state.connected && Date.now() - state.lastRxMs > LINK_TIMEOUT_MS) {
         state.connected = false;
+        state.bars = null;
         startLedClear();
     }
 

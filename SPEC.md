@@ -55,6 +55,7 @@ F0 7D 4D 42 <cmd> <payload...> F7          (0x7D = educational/dev ID, "MB" magi
 | `0x03` LED_CC | B→M | `(cc, color)*` | palette/brightness LED via CC address (buttons) |
 | `0x04` LED_RGB | B→M | `(idx, r7, g7, b7)*` | **direct RGB** (7-bit/channel) |
 | `0x05` CLEAR | B→M | — | all LEDs off (progressive) |
+| `0x06` BARS | B→M | `(v 0-127)×8` or empty | 8 value bars on the lower display half (empty payload hides them) |
 | `0x7E` HELLO | B→M | `protoVer` | handshake on Bitwig init |
 | `0x40` PONG | M→B | `seq` | heartbeat reply |
 | `0x41` HELLO_ACK | M→B | `protoVer` | handshake reply |

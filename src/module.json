@@ -1,7 +1,7 @@
 {
     "id": "move-bitwig",
     "name": "Bitwig Move Controller",
-    "version": "0.2.0",
+    "version": "0.4.0",
     "abbrev": "BWG",
     "description": "Control surface bridge for Bitwig Studio (sysex protocol v2)",
     "author": "pi43r",
