@@ -14,6 +14,8 @@ var MoveTransport = {
         this.transport.isPlaying().markInterested();
         this.transport.isArrangerRecordEnabled().markInterested();
         this.transport.isClipLauncherOverdubEnabled().markInterested();
+        this.transport.isMetronomeEnabled().markInterested();
+        this.transport.tempo().displayedValue().markInterested();
     },
 
     /**
@@ -55,6 +57,13 @@ var MoveTransport = {
         if (cc === MoveHardware.CC.UNDO) {
             if (modifiers.shift) this.application.redo();
             else this.application.undo();
+            return true;
+        }
+
+        if (cc === MoveHardware.CC.CAPTURE) {
+            // Bitwig has no Capture-MIDI API; Capture = tap tempo instead.
+            this.transport.tapTempo();
+            MoveNavigation.toast("Tap: " + this.transport.tempo().displayedValue().get());
             return true;
         }
 

@@ -51,11 +51,54 @@ Move's native **RGB LED sysex** (`F0 00 21 1D 01 01 3B 10 …`), discovered in
 8. Kill Bitwig → module back to "Waiting…" + LEDs clear; restart Bitwig → auto-reconnect
 9. Does Back (CC 51) reach Bitwig, or does the shim suspend the module first?
 
-## Infrastructure / platform
+## Done — v0.3.0 mode framework + manual-parity batch (2026-07-12, untested)
 
-- [ ] **I4 — Mode/layer framework in the Bitwig script.** Small state machine: main modes
-      (SESSION / NOTE) + held-modifier overlays (Shift/Mute/Delete/Copy/Rec/track-held/
-      step-held). Prereq for almost every feature below. (Modifier tracking exists.)
+- [x] **I4** — SESSION/NOTE mode framework; **Menu** toggles (Menu LED lit = NOTE),
+      held-modifier overlays (Shift/Delete/Copy/Mute-as-hold)
+- [x] **F3/F4** — track buttons select tracks 1-4 (white = selected, red = armed, track
+      color otherwise); double-press = arm; Shift+Track = launch scene (old behavior);
+      Mute+Track = mute; Delete+Track = delete; Copy+Track = duplicate;
+      Track-held + Volume knob = that track's volume. Mute button: tap = mute selected
+      (Shift+tap = solo), hold = modifier. (Rec+Track arm skipped — Rec acts on press.)
+- [x] **F5** — wheel = device prev/next; click = fold/unfold; Mute+click = device on/off
+- [x] **F6/I10** — Shift+Left/Right = remote controls page (name toast on OLED);
+      knob ring LEDs show mapped param values as brightness (RGB sysex, idx 71-78)
+- [x] **F7** — Delete + knob-touch = reset parameter (Shift+knob fine was already in)
+- [x] **F8** — SESSION steps: odd = select track 1-8, even = stop track, step 16 = stop all
+- [x] **F10** — queued clips blink (~3 Hz flush loop); recording-queued blinks red
+- [x] **F11** — Shift+Up/Down = scene page scroll (Shift+L/R is taken by remote pages)
+- [x] **F13** — pad on empty slot of an armed track records a new clip (`slot.record()`)
+- [x] **F14** — NoteInput plumbing with per-mode key translation table
+      (`setShouldConsumeEvents(false)`, pads silent in SESSION mode)
+- [x] **F15 (core)** — NOTE instrument sub-mode: in-key major layout (rows +3 degrees),
+      root pads = track color, Up/Down = octave; scale/root menu still open (F16)
+- [x] **F17 (core)** — drum sub-mode auto-detected (`hasDrumPads`), 32-pad window with
+      pad colors, Up/Down = ±16 pads (Shift = ±4)
+- [x] **F18 (core)** — step sequencer: steps toggle last-played key in the launcher
+      cursor clip, playhead chase LED, Left/Right = step page (16 steps @ 1/16)
+- [x] **F19 (core)** — held step + Volume knob = velocity, + wheel = note length
+      (Shift = fine); step toggle commits on release when nothing was edited
+- [x] **F22 (partial)** — Shift+Step 6 = metronome, Shift+Step 10 = full velocity,
+      Shift+Step 15 = double content, Shift+Step 16 = quantize clip;
+      Shift+wheel = tempo (1 BPM/detent). Tempo/groove *menus* still open.
+- [x] **F24** — Capture = **tap tempo** (Bitwig has no Capture-MIDI API)
+
+**Hardware test checklist v0.3.0:**
+1. Menu toggles SESSION/NOTE (toast + Menu LED); pads silent in SESSION, play in NOTE
+2. NOTE instrument: in-key layout sounds right, root pads highlighted, octave Up/Down
+3. NOTE drum: select a track with a Drum Machine → pads show drum cells, play them
+4. Step sequencer: select a clip, toggle steps, playhead chases, L/R pages
+5. Track buttons: select / double-press arm / Mute+track / Delete+track / Copy+track;
+   held track + Volume knob adjusts that track
+6. Mute tap = mute selected, Shift+tap = solo, hold+jog-click = device on/off
+7. Wheel: device prev/next, click fold/unfold
+8. Shift+L/R remote page toast; knob rings follow macro values
+9. SESSION steps: odd select, even stop, 16 = stop all; queued clip blinks
+10. Empty slot on armed track records
+11. Held step + Volume = velocity, + wheel = length; tap still toggles
+12. Shift+Step 6/10/15/16 actions; Shift+wheel = tempo; Capture = tap tempo
+
+## Infrastructure / platform
 - [ ] **I5 — Shared hardware constants.** Generate/copy one constants file used by both
       `src/ui.js` and `Controller Scripts/MoveHardware.js` so CC numbers can't drift.
 - [ ] **I6 — Logging & test setup.** Document `debug_log_on` + `debug.log` tail for the
@@ -66,67 +109,40 @@ Move's native **RGB LED sysex** (`F0 00 21 1D 01 01 3B 10 …`), discovered in
       catalog PR once stable.
 - [x] **I9 — resolved.** Pads use `LED_NOTE` + `nearestColor()` (palette); RGB sysex
       kept for CC-addressed LEDs only (track row 40-43, Sample 118, knob rings 71-78).
-- [ ] **I10 — Knob-ring value feedback.** Hardware-confirmed: knob rings 71-78 accept
-      RGB sysex. Show macro value as ring brightness (or param color) — pairs with F6.
-
-## Phase 2 — Manual parity: global & tracks
-- [ ] **F3 — Track buttons select tracks** (4-track window): white = selected,
-      red = armed, track color otherwise. Move scene launch to Shift+Track (or drop —
-      scenes are reachable via pads later). Double-press = arm.
-- [ ] **F4 — Modifier+Track gestures**: Mute+Track, Shift+Mute+Track (solo),
-      Delete+Track, Copy+Track (duplicate), Rec+Track (arm), Track-held+Volume knob.
-- [ ] **F5 — Wheel = device navigation** (manual parity): turn = prev/next device,
-      click = toggle expand / enter group, Mute+click = device on/off. Move track
-      selection off the wheel (tracks now on track buttons / steps).
-- [ ] **F6 — Remote-controls paging** on Left/Right while a device param was last touched,
-      with page name on OLED; knob indicator LEDs (CC 71–78 out) show mapped params.
-- [ ] **F7 — Shift+Knob = fine adjust**; Delete+Knob-tap = `parameter.reset()`.
+- [x] **I10 — Knob-ring value feedback** — rings 71-78 show macro values as brightness.
 
 ## Phase 3 — Session mode completion
 
-- [ ] **F8 — Step buttons in Session mode**: odd steps select tracks 1–8, even steps stop
-      that track's clip, Step 16 = stop all (`sceneBank.stop()` / per-track `stop()`).
 - [ ] **F9 — Copy+Pad → Pad clip copy/paste** (`slot.duplicateClip()` / clip content copy),
-      Copy+scene = duplicate scene.
-- [ ] **F10 — Queued/recording-queued LED states** (`isPlaybackQueued`,
-      `isRecordingQueued`) — blink handling module-side or via flush-tick blinking.
-- [ ] **F11 — Shift+arrows = page scroll** (8 tracks / 4 scenes at once).
+      Copy+scene = duplicate scene. (Needs API research: cross-slot copy target.)
 - [ ] **F12 — Session Overview sub-mode** (Shift+Menu): each pad = 8×4 block via
       `trackBank.scrollPosition()` math; dim = has clips, white = current window,
       green pulse = playing block.
-- [ ] **F13 — Empty-slot record**: pad on empty slot of armed track = record new clip
-      (`slot.record()`), matching Move behavior.
 
-## Phase 4 — Note mode & step sequencer (the big one)
+## Phase 4 — Note mode & step sequencer (remaining)
 
-- [ ] **F14 — NoteInput plumbing**: `midiIn.createNoteInput()` masked to pad notes with
-      `setKeyTranslationTable`; enable/disable per mode so pads are notes in NOTE mode and
-      clip buttons in SESSION mode.
-- [ ] **F15 — Instrument sub-mode**: in-key 8×4 layout (fourths rows), root highlight,
-      octave shift on Up/Down (repurposed in NOTE mode), Shift = scale-degree shift.
+- [ ] **F15b — Instrument layout polish**: chromatic option, Shift+Up/Down = shift by
+      scale degree, highlight pads currently sounding.
 - [ ] **F16 — Key & scale menu** (Shift+Step 9): root + scale + in-key/chromatic; feeds
-      layout and pad LEDs.
-- [ ] **F17 — Drum sub-mode**: auto when `cursorDevice.hasDrumPads()`; 32-pad
-      `createDrumPadBank(32)` window, pad colors, +/- window paging, Mute+pad = pad mute,
-      Shift+pad = select pad (shows chain on OLED).
-- [ ] **F18 — Step sequencer core**: `createLauncherCursorClip(16, 128)`, step toggle at
-      selected key(s), playhead chase LED, clip-page navigation via Left/Right.
-- [ ] **F19 — Step editing**: held step + Volume knob = velocity, + wheel = length,
-      + Left/Right = nudge, + plus/minus = transpose (NoteStep API).
+      layout and pad LEDs (scale/root state exists in `MoveNotes`).
+- [ ] **F17b — Drum sub-mode gestures**: Mute+pad = pad mute, Shift+pad = select pad
+      (shows chain on OLED), Copy+pad = copy device between pads.
+- [ ] **F19b — Step editing extras**: held step + Left/Right = nudge, + Up/Down =
+      transpose; multiple held pads add several notes per step (currently only
+      last-played key).
 - [ ] **F20 — Loop mode** (Loop button): steps = bars, wheel = loop length
-      (Shift = 16th increments), Shift+Step 15 = double loop+content, Shift+Step 16 =
-      quantize clip.
+      (Shift = 16th increments). (Double-content and quantize already live on
+      Shift+Step 15/16.)
 - [ ] **F21 — Note-mode record**: Rec records into selected/next slot
       (`transport.isClipLauncherOverdubEnabled` for overdub).
 
 ## Phase 5 — Settings menus & polish
 
-- [ ] **F22 — Shift+Step settings**: tempo (5, wheel edits), metronome (6),
-      groove/shuffle (7), full velocity (10), quantize settings (3). See SPEC §5.7.
+- [ ] **F22b — Settings menus**: groove/shuffle (Shift+Step 7, `host.createGroove()`),
+      quantize-amount setting (Shift+Step 3), key & scale menu (Shift+Step 9 = F16).
+      Simple toggles (metronome, full velocity, tempo) are already done as actions.
 - [ ] **F23 — Display layout v2**: header (mode + window pos), 8 param mini-bars, volume
-      bar while Volume touched, toast messages. Needs protocol extension (SPEC §2.2/§5.6).
-- [ ] **F24 — Capture button re-purpose** (no Capture MIDI in Bitwig API): candidates —
-      tap tempo, "prepare next slot", or toggle arranger/launcher focus. Decide & implement.
+      bar while Volume touched. Needs protocol extension (SPEC §2.2/§5.6).
 - [ ] **F25 — Note repeat** (Shift+Step 11): script-generated repeats while pad held,
       rate menu. Optional / stretch.
 - [ ] **F26 — Mixer mode** (Bitwig extra): knobs = 8 track volumes or sends, steps =

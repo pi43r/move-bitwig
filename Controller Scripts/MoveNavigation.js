@@ -1,6 +1,10 @@
 /**
  * MoveNavigation.js
  * Arrow keys, scrolling, device/track navigation, knobs, display content.
+ *
+ * Wheel = device navigation (manual parity): turn selects prev/next device,
+ * click folds/unfolds, Mute+click toggles the device on/off.
+ * Shift+Left/Right = remote controls page. Shift+Up/Down = scene page scroll.
  */
 
 var MoveNavigation = {
@@ -11,6 +15,9 @@ var MoveNavigation = {
     masterTrack: null,
 
     activeParameter: null,
+    trackSelected: [],      // per bank track: selected in editor (8)
+    toastText: null,
+    toastUntil: 0,
 
     init: function (host) {
         this.trackBank = host.createMainTrackBank(8, 2, 4);
@@ -24,15 +31,47 @@ var MoveNavigation = {
         this.cursorTrack.volume().name().markInterested();
         this.cursorTrack.volume().value().displayedValue().markInterested();
         this.cursorDevice.name().markInterested();
+        this.cursorDevice.isEnabled().markInterested();
+        this.cursorDevice.isExpanded().markInterested();
         this.masterTrack.volume().name().markInterested();
         this.masterTrack.volume().value().displayedValue().markInterested();
 
+        // Remote controls: names/values for display, value+exists for knob rings
         for (var i = 0; i < 8; i++) {
             var rc = this.remoteControls.getParameter(i);
             rc.name().markInterested();
+            rc.value().markInterested();
             rc.value().displayedValue().markInterested();
+            rc.exists().markInterested();
             rc.setIndication(true);
         }
+        this.remoteControls.pageNames().markInterested();
+        this.remoteControls.selectedPageIndex().markInterested();
+
+        // Per-bank-track observers shared by Grid (steps/pads) and TrackControls
+        var self = this;
+        this.trackSelected = [];
+        for (i = 0; i < 8; i++) {
+            (function (idx) {
+                var track = self.trackBank.getItemAt(idx);
+                track.exists().markInterested();
+                track.color().markInterested();
+                track.arm().markInterested();
+                track.mute().markInterested();
+                self.trackSelected[idx] = false;
+                track.addIsSelectedInEditorObserver(function (sel) {
+                    self.trackSelected[idx] = sel;
+                });
+            })(i);
+        }
+    },
+
+    /** Transient message on display line 3 (~1.5 s). */
+    toast: function (text) {
+        this.toastText = text;
+        this.toastUntil = Date.now() + 1500;
+        host.requestFlush();
+        host.scheduleTask(function () { host.requestFlush(); }, 1600);
     },
 
     /**
@@ -45,12 +84,33 @@ var MoveNavigation = {
         MoveProtocol.text(1, trackName);
         MoveProtocol.text(2, deviceName);
 
+        if (this.toastText !== null && Date.now() < this.toastUntil) {
+            MoveProtocol.text(3, this.toastText);
+            MoveProtocol.text(4, "");
+            return;
+        }
+
         if (this.activeParameter) {
             MoveProtocol.text(3, this.activeParameter.name().get());
             MoveProtocol.text(4, this.activeParameter.value().displayedValue().get());
         } else {
             MoveProtocol.text(3, "");
             MoveProtocol.text(4, "");
+        }
+    },
+
+    /**
+     * Knob ring LEDs (RGB-capable, idx = CC 71-78): brightness follows the
+     * mapped parameter's value; off when the slot is empty.
+     */
+    updateLEDs: function () {
+        for (var i = 0; i < 8; i++) {
+            var rc = this.remoteControls.getParameter(i);
+            var v = 0;
+            if (rc.exists().get()) {
+                v = 0.08 + 0.55 * rc.value().get();
+            }
+            MoveProtocol.ledRGB(MoveHardware.CC.KNOB_FIRST + i, v, v, v);
         }
     },
 
@@ -62,39 +122,64 @@ var MoveNavigation = {
         if (value === 0) return false;
 
         if (cc === MoveHardware.CC.LEFT) {
-            if (modifiers.shift) this.cursorDevice.selectPrevious();
+            if (modifiers.shift) this.selectRemotePage(-1);
             else this.trackBank.scrollBackwards();
             return true;
         }
         if (cc === MoveHardware.CC.RIGHT) {
-            if (modifiers.shift) this.cursorDevice.selectNext();
+            if (modifiers.shift) this.selectRemotePage(1);
             else this.trackBank.scrollForwards();
             return true;
         }
         if (cc === MoveHardware.CC.UP) {
-            this.trackBank.sceneBank().scrollBackwards();
+            if (modifiers.shift) this.trackBank.sceneBank().scrollPageBackwards();
+            else this.trackBank.sceneBank().scrollBackwards();
             return true;
         }
         if (cc === MoveHardware.CC.DOWN) {
-            this.trackBank.sceneBank().scrollForwards();
+            if (modifiers.shift) this.trackBank.sceneBank().scrollPageForwards();
+            else this.trackBank.sceneBank().scrollForwards();
             return true;
         }
 
-        // Master (volume) knob: master track volume (manual parity).
+        // Master (volume) knob: master volume, or held track's volume (F4).
         if (cc === MoveHardware.CC.MASTER) {
             var delta = MoveHardware.decodeDelta(value);
-            var vol = this.masterTrack.volume();
-            vol.inc(delta, modifiers.shift ? 512 : 128); // Shift = fine
+            var vol;
+            var held = MoveTrackControls.heldTrack;
+            if (held >= 0) {
+                vol = this.trackBank.getItemAt(held).volume();
+            } else {
+                vol = this.masterTrack.volume();
+            }
+            vol.inc(delta, modifiers.shift ? 512 : 128);
             this.activeParameter = vol;
             host.requestFlush();
             return true;
         }
 
-        // Jog wheel: track selection
+        // Jog wheel: device navigation (turn), fold/enable (click).
+        // Shift+wheel = tempo (1 BPM per detent).
         if (cc === MoveHardware.CC.JOG_WHEEL) {
             var jogDelta = MoveHardware.decodeDelta(value);
-            if (jogDelta > 0) this.cursorTrack.selectNext();
-            else if (jogDelta < 0) this.cursorTrack.selectPrevious();
+            if (modifiers.shift) {
+                MoveTransport.transport.tempo().incRaw(jogDelta);
+                this.toast("Tempo " + MoveTransport.transport.tempo().displayedValue().get());
+                return true;
+            }
+            if (jogDelta > 0) this.cursorDevice.selectNext();
+            else if (jogDelta < 0) this.cursorDevice.selectPrevious();
+            return true;
+        }
+        if (cc === MoveHardware.CC.JOG_CLICK) {
+            if (value !== 127) return true;
+            if (modifiers.mute) {
+                this.cursorDevice.isEnabled().toggle();
+                modifiers.muteUsed = true;
+                this.toast("Device on/off");
+            } else {
+                this.cursorDevice.isExpanded().toggle();
+            }
             return true;
         }
 
@@ -114,16 +199,35 @@ var MoveNavigation = {
         return false;
     },
 
+    selectRemotePage: function (dir) {
+        if (dir > 0) this.remoteControls.selectNextPage(true);
+        else this.remoteControls.selectPreviousPage(true);
+        // Show the new page name (observer values update before next flush)
+        var self = this;
+        host.scheduleTask(function () {
+            var names = self.remoteControls.pageNames().get();
+            var idx = self.remoteControls.selectedPageIndex().get();
+            if (names && idx >= 0 && idx < names.length) {
+                self.toast("Page: " + names[idx]);
+            }
+        }, 50);
+    },
+
     /**
      * Handle knob touches (notes 0-9)
      */
-    handleTouch: function (status, note, velocity) {
+    handleTouch: function (status, note, velocity, modifiers) {
         if (note > 9) return false;
 
         var isPress = ((status & 0xF0) === 0x90 && velocity > 0);
         if (isPress) {
             if (note <= 7) {
-                this.activeParameter = this.remoteControls.getParameter(note);
+                var rc = this.remoteControls.getParameter(note);
+                if (modifiers.del) {
+                    rc.reset(); // Delete + knob tap = reset parameter
+                    this.toast("Param reset");
+                }
+                this.activeParameter = rc;
             } else if (note === 8) {
                 this.activeParameter = this.masterTrack.volume();
             }
