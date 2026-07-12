@@ -27,10 +27,11 @@ The link is supervised: Bitwig pings every second; the module shows
 "Waiting for Bitwig…" and clears LEDs when the link drops, and full state is resent on
 reconnect.
 
-## Current Status: v0.4 — mixer, overview, scale overlay & gestures, **pending hardware test**
+## Current Status: v0.5 — 4×4 drums, Loop Mode, contextual display, **pending hardware test**
 
-See the hardware test checklist in TODO.md. **v0.4 changed the module too (BARS
-display command) — redeploy to the Move, not just to Bitwig.**
+See the hardware test checklist in TODO.md. v0.5 is Bitwig-side only (the
+module is unchanged since 0.4.0 — but if you haven't deployed 0.4.0 yet,
+redeploy for the BARS display command).
 
 ## Control Reference
 
@@ -56,11 +57,14 @@ pressing one jumps the window there).
 | **MENU**         | Cycle SESSION / NOTE / MIXER  | Bright=NOTE, dim=MIXER |
 | **Shift + MENU** | Session Overview on/off       |                   |
 | **LOOP (tap)**   | Toggle arranger loop          | Lit = loop on     |
-| **LOOP (hold)**  | Clip-loop modifier (NOTE mode)|                   |
+| **LOOP (hold)**  | Loop Mode (NOTE mode, see below) |                |
 | **CAPTURE**      | Tap tempo                     |                   |
 | **Shift + Wheel**| Tempo (1 BPM / detent)        |                   |
 
 ### Shift + Step actions
+While Shift is held the step LEDs show the map: dim white = has a function,
+green = that toggle is on, black = unassigned.
+
 | Combo               | Action                            |
 | :------------------ | :-------------------------------- |
 | **Shift + Step 3**  | Cycle quantize amount (100/50/75%)|
@@ -105,13 +109,15 @@ pressing one jumps the window there).
 In **Session Overview** (Shift+Menu): pads = 8×4 blocks, white = current window,
 dim = inside the project; pressing a pad jumps there and returns to SESSION.
 
+In SESSION and MIXER the display's second line shows the window position
+(`Trk 1-8  Scn 1-4`).
+
 ### NOTE mode — pads & steps
 | Control            | Action                                              |
 | :----------------- | :-------------------------------------------------- |
 | **Pads**           | Play notes: in-key layout, root pads = track color; |
-|                    | drum layout (auto with a Drum Machine) = pad colors |
 |                    | Sounding pads light green                           |
-| **Up / Down**      | Octave ±1 (drum: pad window ±16, Shift = ±4)        |
+| **Up / Down**      | Octave ±1 (toast shows octave; drum: pad window ±16, Shift = ±4) |
 | **Shift + U / D**  | Shift in-key layout ±1 scale degree                 |
 | **Steps 1-16**     | Tap: toggle step for the last played note           |
 | **Pads held + Step** | Write the held chord into that step               |
@@ -120,21 +126,41 @@ dim = inside the project; pressing a pad jumps there and returns to SESSION.
 | **Step held + Wheel** | Note length (Shift = fine, 1/64)                 |
 | **Step held + L / R** | Nudge notes one step left / right                |
 | **Step held + U / D** | Transpose ±1 semitone (Shift = ±12)              |
-| **Loop + Step n**  | Set clip loop to n bars                             |
-| **Loop + Wheel**   | Clip loop length ±1 bar (Shift = 1/16)              |
 | **Left / Right**   | Step-sequencer page                                 |
 | Step LEDs          | White = has notes, green = playhead                 |
 
-Drum layout gestures: **Shift + Pad** selects the drum pad (name on OLED),
-**Mute + Pad** mutes/unmutes it.
+#### Loop Mode (hold Loop)
+While Loop is held, each step button = one bar; step LEDs show the clip loop
+in white (Move-style).
+
+| Control            | Action                                       |
+| :----------------- | :------------------------------------------- |
+| **Tap step n**     | Loop bars 1..n                               |
+| **Double-tap step n** | Loop just bar n                           |
+| **Hold step A + press B** | Loop bars A..B                        |
+| **Loop + Up / Down** | Double / halve the loop length             |
+| **Loop + Copy**    | Double the clip content                      |
+| **Loop + Wheel**   | Loop length ±1 bar (Shift = 1/16)            |
+
+#### Drum layout (auto with a Drum Machine)
+The **left 4×4** plays the drum pads (bottom-left = lowest, pad colors from
+the rack). The **right 4×4** is 16 fixed velocity levels for the last played
+pad (bottom-left = soft, top-right = full; current level lit green) — taps
+also write into a held step, and step taps use the chosen velocity.
+
+**Shift + Pad** selects the drum pad (name on OLED), **Mute + Pad**
+mutes/unmutes it, **Copy + Pad, Pad** (while holding Copy) copies the first
+pad's device onto the second, **held Pad + Volume encoder** adjusts that
+pad's chain volume. Up/Down moves the 16-pad window (toast shows the range).
 
 #### Key & Scale overlay (Shift + Step 9)
-| Control       | Action                                  |
-| :------------ | :-------------------------------------- |
-| **Jog Wheel** | Root note (C, C#, … B)                  |
-| **Up / Down** | Scale (Major, Minor, Dorian, … 10 total)|
-| **Jog Click** | Toggle In-Key / Chromatic layout        |
-| **Back**      | Close overlay (or Shift+Step 9 again)   |
+| Control          | Action                                  |
+| :--------------- | :-------------------------------------- |
+| **Jog Wheel**    | Root note (C, C#, … B)                  |
+| **Up / Down**    | Octave ±1                               |
+| **Left / Right** | Scale (Major, Minor, Dorian, … 10 total)|
+| **Jog Click**    | Toggle In-Key / Chromatic layout        |
+| **Back**         | Close overlay (or Shift+Step 9 again)   |
 
 Pads keep playing while the overlay is open, so changes can be auditioned.
 Chromatic layout = rows of fourths; LEDs: root = track color, in-scale = dim
@@ -145,6 +171,7 @@ white, out-of-scale = off.
 | :----------------- | :---------------------------------------- | :----------------------- |
 | **Knobs 1-8**      | Track 1-8 volume (Shift = fine)           | Ring = color × volume    |
 | **Mute + Knob**    | Track pan (Shift = fine)                  |                          |
+| **Copy + Knob**    | Send A (Copy + Shift + Knob = Send B)     |                          |
 | **Pad row 1 (top)**| Toggle record arm                         | Red = armed              |
 | **Pad row 2**      | Toggle solo                               | Yellow = soloed          |
 | **Pad row 3**      | Toggle mute                               | Orange = muted           |
@@ -166,8 +193,8 @@ white, out-of-scale = off.
 ### Device & Parameters
 | Control                 | Action                         | Feedback                     |
 | :---------------------- | :----------------------------- | :--------------------------- |
-| **Knobs 1-8**           | Remote Controls (Shift = fine) | Value on OLED + ring LED     |
-| **Knob Touch**          | Focus parameter + 8 value bars | Bars on OLED while touched   |
+| **Knobs 1-8**           | Remote Controls (Shift = fine) | Name + value on OLED, ring LED |
+| **Knob Touch**          | Focus parameter                | Its name & value while touched (rings show the rest) |
 | **Delete + Knob Touch** | Reset parameter                |                              |
 | **Master Knob Touch**   | Focus master volume            | Name & value                 |
 

@@ -160,6 +160,67 @@ Bitwig script.**
 14. Shift+Step 3 cycles quantize amount (toast); Shift+Step 16 uses it
 15. NOTE (in-key): Shift+Up/Down shifts layout by a scale degree (root LEDs move)
 
+## Done — v0.5.0 hardware-feedback batch (2026-07-13, untested)
+
+Bitwig-side only — **no module redeploy needed** (module unchanged since 0.4.0).
+Driven by v0.4 hardware feedback:
+
+- [x] **Contextual knob display** — the 8-bar overlay is now MIXER-only. Device
+      knobs show the touched/turned parameter's *name + value* on the display
+      instead (touch beats toasts); ring LEDs already show the other values.
+- [x] **Shift-held step LED map** — while Shift is held the step row shows the
+      Shift+Step functions: dim white = assigned, green = toggle currently on
+      (metronome, groove, full velocity, scale overlay), white = quantize amount.
+- [x] **Octave feedback** — Up/Down in NOTE mode toasts "Octave N (C3)"; drum
+      window scroll toasts the pad range ("Pads C1-D#2").
+- [x] **Overlay remap** — Key & Scale overlay: **Up/Down = octave** (was scale),
+      **Left/Right = scale**; wheel = root, click = chromatic as before.
+- [x] **F17c — 4×4 drum layout** — left 4×4 = drum pads (bottom-left = lowest,
+      16-pad bank window, Up/Down = ±16 / Shift ±4, clamped 0-112); right 4×4 =
+      **16 velocity levels** for the last played pad (plays it via
+      `cursorTrack.playNote`, writes into a held step, sets the velocity used by
+      step taps; current level lit green).
+- [x] **F20b — Move-style Loop Mode** — while Loop is held: step LEDs show the
+      clip loop (white bars); tap step n = loop bars 1..n, double-tap = just that
+      bar, hold A + press B = loop A..B (`getLoopStart`), Loop+Up/Down =
+      double/halve length, **Loop+Copy = double clip content**.
+- [x] **Global scale (blocked)** — checked the API d.ts through API 21
+      (Bitwig 5.3): the project Key/Scale is **not exposed** to controllers.
+      The overlay stays the source of truth; revisit when the API grows it.
+- [x] **F26c — sends layer** — MIXER: Copy held + knob = Send A,
+      Copy+Shift+knob = Send B (bank already had 2 sends); name/value on display
+- [x] **F23 (header)** — SESSION/MIXER display line 2 = window position
+      ("Trk 1-8  Scn 1-4") instead of the device name
+- [x] **F17b (rest)** — drum layout: hold Copy, press source pad, press target
+      pad = copy the source pad's (first) device via
+      `startOfDeviceChainInsertionPoint().copyDevices()`; releasing Copy
+      abandons pending Copy+Pad gestures (clips too, matching the Move manual)
+- [x] **Drum pad chain volume** — held drum pad + Volume encoder = that pad's
+      chain volume (manual §18.5 parity; Shift = fine, name/value on display)
+
+**Hardware test checklist v0.5.0** (Bitwig script only):
+1. Turn/touch a device knob → name + value on display (no 8-bar overlay);
+   MIXER knobs still show the 8 volume bars while touched
+2. Hold Shift → step row lights the function map; green follows metronome /
+   groove / full velocity / overlay state; releasing Shift restores step LEDs
+3. NOTE: Up/Down toasts the octave; overlay: Up/Down = octave, L/R = scale
+4. Drum: left 4×4 plays pads (bottom-left lowest), colors correct; right 4×4
+   sets velocity (green = current) and audibly plays the last pad at it
+5. Drum: Shift+pad / Mute+pad still select/mute the correct pad (4×4 mapping)
+6. Drum: step taps write with the chosen velocity; velocity pad + held step
+   writes that velocity into the step
+7. Hold Loop → step LEDs = loop bars; tap n / double-tap / A+B range work;
+   Loop+Up/Down doubles/halves; Loop+Copy doubles content; releasing Loop
+   without a gesture still toggles arranger loop (no double-fire)
+8. MIXER: Copy+knob sends to Send A (display shows send name/value),
+   Copy+Shift+knob = Send B; volume/pan layers unaffected
+9. SESSION/MIXER: display line 2 shows the window ("Trk 1-8  Scn 1-4") and
+   follows Left/Right/Up/Down scrolling; NOTE mode still shows the device
+10. Drum: hold Copy, tap source pad, tap empty pad → device copied (toast);
+    releasing Copy mid-gesture cancels (also for SESSION clip copy)
+11. Drum: hold a pad + turn Volume encoder → chain volume (display shows
+    name/value); master volume unaffected while a pad is held
+
 ## Infrastructure / platform
 - [ ] **I5 — Shared hardware constants.** Generate/copy one constants file used by both
       `src/ui.js` and `Controller Scripts/MoveHardware.js` so CC numbers can't drift.
@@ -175,12 +236,11 @@ Bitwig script.**
 
 ## Remaining features
 
-- [ ] **F17b (rest)** — Copy+pad = copy device between drum pads.
-- [ ] **F23 (rest)** — display header (mode + window position); volume bar while the
-      Volume knob is touched.
+- [ ] **Global Key & Scale sync** — blocked: not in the controller API (checked
+      through API 21 / Bitwig 5.3). Re-check on new Bitwig releases.
 - [ ] **F25 — Note repeat** (Shift+Step 11): script-generated repeats while pad held,
-      rate menu. Optional / stretch.
-- [ ] **F26c — Mixer sends layer** (needs a sends bank + a free modifier).
+      rate menu. Optional / stretch (scheduleTask timing jitter needs a hardware
+      feel-test before building the rate menu).
 - [ ] **F27 — VU meters on OLED** via `track.addVuMeterObserver` once display protocol
       supports widgets. Stretch.
 - [ ] Overview polish: green pulse on blocks containing playing clips.

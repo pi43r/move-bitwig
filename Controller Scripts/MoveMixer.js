@@ -30,6 +30,14 @@ var MoveMixer = {
             track.pan().name().markInterested();
             track.pan().value().markInterested();
             track.pan().value().displayedValue().markInterested();
+            // Sends layer (Copy held + knob; bank has 2 sends)
+            for (var s = 0; s < 2; s++) {
+                var send = track.sendBank().getItemAt(s);
+                send.name().markInterested();
+                send.value().markInterested();
+                send.value().displayedValue().markInterested();
+                send.exists().markInterested();
+            }
             // exists/color/arm/mute/selected are observed by MoveNavigation
         }
     },
@@ -46,13 +54,18 @@ var MoveMixer = {
             var track = this.trackBank.getItemAt(idx);
             var delta = MoveHardware.decodeDelta(value);
             if (delta !== 0) {
-                // Mute held = pan layer (F26b), otherwise volume
+                // Copy held = sends layer (Shift picks send B), Mute held =
+                // pan (F26b), otherwise volume
                 var param = track.volume();
-                if (modifiers.mute) {
+                var fine = modifiers.shift;
+                if (modifiers.copy) {
+                    param = track.sendBank().getItemAt(modifiers.shift ? 1 : 0);
+                    fine = false; // Shift selects the send here
+                } else if (modifiers.mute) {
                     param = track.pan();
                     modifiers.muteUsed = true;
                 }
-                param.inc(delta, modifiers.shift ? 512 : 128);
+                param.inc(delta, fine ? 512 : 128);
                 MoveNavigation.activeParameter = param;
                 host.requestFlush();
             }

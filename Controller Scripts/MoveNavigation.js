@@ -89,7 +89,22 @@ var MoveNavigation = {
         var deviceName = this.cursorDevice.name().get() || "No Device";
 
         MoveProtocol.text(1, trackName);
-        MoveProtocol.text(2, deviceName);
+        if (ui.mode === "session" || ui.mode === "mixer") {
+            // Window header instead of the device name (F23)
+            var tPos = this.trackBank.scrollPosition().get() + 1;
+            var sPos = this.trackBank.sceneBank().scrollPosition().get() + 1;
+            MoveProtocol.text(2, "Trk " + tPos + "-" + (tPos + 7)
+                + "  Scn " + sPos + "-" + (sPos + 3));
+        } else {
+            MoveProtocol.text(2, deviceName);
+        }
+
+        // A touched knob is explicit intent: its name/value beats any toast.
+        if (this.touchMask !== 0 && this.activeParameter) {
+            MoveProtocol.text(3, this.activeParameter.name().get());
+            MoveProtocol.text(4, this.activeParameter.value().displayedValue().get());
+            return;
+        }
 
         if (this.toastText !== null && Date.now() < this.toastUntil) {
             MoveProtocol.text(3, this.toastText);
@@ -252,23 +267,19 @@ var MoveNavigation = {
     },
 
     /**
-     * Parameter bars on the display's lower half while any knob is touched
-     * (called from flush). Mixer mode shows the 8 track volumes instead.
+     * 8 volume bars on the display's lower half while a knob is touched —
+     * MIXER mode only. Device knobs are contextual instead: the touched
+     * parameter's name/value on the display (the rings show the rest).
      */
     updateBars: function (mixerMode) {
-        if (this.touchMask === 0) {
+        if (!mixerMode || this.touchMask === 0) {
             MoveProtocol.bars(null);
             return;
         }
         var values = [];
         for (var i = 0; i < 8; i++) {
-            if (mixerMode) {
-                var track = this.trackBank.getItemAt(i);
-                values[i] = track.exists().get() ? track.volume().value().get() : 0;
-            } else {
-                var rc = this.remoteControls.getParameter(i);
-                values[i] = rc.exists().get() ? rc.value().get() : 0;
-            }
+            var track = this.trackBank.getItemAt(i);
+            values[i] = track.exists().get() ? track.volume().value().get() : 0;
         }
         MoveProtocol.bars(values);
     }

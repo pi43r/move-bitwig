@@ -13,7 +13,7 @@
 loadAPI(18);
 host.setShouldFailOnDeprecatedUse(true);
 
-host.defineController("Ableton", "Move", "0.4", "7bc8983f-638b-40ab-8c23-95f4c8697cab", "soße");
+host.defineController("Ableton", "Move", "0.5", "7bc8983f-638b-40ab-8c23-95f4c8697cab", "soße");
 host.defineMidiPorts(1, 1);
 host.addDeviceNameBasedDiscoveryPair(["Ableton Move"], ["Ableton Move"]);
 
@@ -101,12 +101,28 @@ function onMidi0(status, data1, data2) {
         switch (data1) {
             case MoveHardware.CC.SHIFT:
                 modifiers.shift = (data2 > 64);
+                host.requestFlush(); // step LEDs show Shift+Step functions
                 return;
             case MoveHardware.CC.DELETE:
                 modifiers.del = (data2 > 64);
                 return;
             case MoveHardware.CC.COPY:
                 modifiers.copy = (data2 > 64);
+                if (!modifiers.copy) {
+                    // Release abandons pending Copy+Pad gestures
+                    MoveGrid.copySource = null;
+                    MoveNotes.drumCopySource = -1;
+                }
+                // Loop held + Copy = double the clip content (Move-style)
+                if (modifiers.copy && modifiers.loop) {
+                    modifiers.loopUsed = true;
+                    if (MoveNotes.cursorClip.exists().get()) {
+                        MoveNotes.cursorClip.duplicateContent();
+                        MoveNavigation.toast("Content doubled");
+                    } else {
+                        MoveNavigation.toast("No clip selected");
+                    }
+                }
                 return;
             case MoveHardware.CC.LOOP:
                 // Hold = modifier (loop-length gestures); tap = arranger loop.
@@ -117,6 +133,7 @@ function onMidi0(status, data1, data2) {
                     modifiers.loop = false;
                     if (!modifiers.loopUsed) MoveTransport.toggleArrangerLoop();
                 }
+                host.requestFlush(); // step LEDs show Loop Mode bars
                 return;
             case MoveHardware.CC.MENU:
                 if (data2 === 127) {
@@ -228,6 +245,30 @@ function handleShiftStep(stepIdx) {
     }
 }
 
+/**
+ * Step LEDs while Shift is held: dim white = has a function, green = the
+ * toggle is currently on, black = unassigned. Mirrors handleShiftStep.
+ */
+function updateShiftStepLEDs() {
+    var C = MoveHardware.COLOR;
+    var colors = {};
+    colors[2] = C.WHITE;                                       // quantize amount
+    colors[5] = MoveTransport.transport.isMetronomeEnabled().get()
+        ? C.GREEN : C.HAS_CLIP;                                // metronome
+    colors[6] = (MoveTransport.groove.getEnabled().get() > 0.5)
+        ? C.GREEN : C.HAS_CLIP;                                // groove
+    if (ui.mode === "note") {
+        colors[8] = MoveNotes.overlayActive ? C.GREEN : C.HAS_CLIP; // scale overlay
+    }
+    colors[9] = MoveNotes.fullVelocity ? C.GREEN : C.HAS_CLIP; // full velocity
+    colors[14] = C.HAS_CLIP;                                   // double content
+    colors[15] = C.HAS_CLIP;                                   // quantize clip
+    for (var i = 0; i < 16; i++) {
+        MoveProtocol.ledNote(MoveHardware.NOTES.STEP_FIRST + i,
+            colors[i] !== undefined ? colors[i] : C.BLACK);
+    }
+}
+
 function onSysex0(data) {
     if (MoveProtocol.onSysex(data)) return;
     // Other sysex ignored.
@@ -238,12 +279,15 @@ function flush() {
     MoveTransport.updateLEDs();
     if (ui.mode === "note") {
         MoveNotes.updateLEDs();
+        if (modifiers.loop && !modifiers.shift) MoveNotes.updateLoopStepLEDs();
     } else if (ui.mode === "mixer") {
         MoveMixer.updatePadLEDs();
         MoveGrid.updateStepLEDs();
     } else {
         MoveGrid.updateLEDs(blinkPhase, ui.overview);
     }
+    // Shift held: step LEDs show the Shift+Step functions (green = on)
+    if (modifiers.shift) updateShiftStepLEDs();
     MoveTrackControls.updateLEDs();
     if (ui.mode === "mixer") MoveMixer.updateKnobLEDs();
     else MoveNavigation.updateLEDs();

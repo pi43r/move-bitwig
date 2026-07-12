@@ -23,7 +23,11 @@ var MoveNotes = {
     scaleIdx: 0,
     chromatic: false,       // chromatic layout (rows of fourths) vs in-key
     overlayActive: false,   // Key & Scale overlay (Shift+Step 9)
-    drumScrollPos: 36,      // first drum pad note in the bank window
+    drumScrollPos: 36,      // first drum pad note in the bank window (16 pads)
+    drumVelocity: 100,      // fixed velocity from the right-half level pads
+    drumCopySource: -1,     // Copy+pad source (bank index), -1 = none
+    padDeviceBanks: [],     // 1-device bank per drum pad (Copy+pad device copy)
+    heldDrumPad: -1,        // held left-half pad (bank index): +Volume = chain vol
 
     SCALES: [
         ["Major", [0, 2, 4, 5, 7, 9, 11]],
@@ -45,6 +49,9 @@ var MoveNotes = {
     stepCount: [],          // notes per step column (16)
     heldStep: -1,           // step button currently held (-1 = none)
     stepEdited: false,      // knob/wheel touched while a step was held
+    loopAnchorStep: -1,     // loop-held step (range gesture: hold A + press B)
+    loopTapStep: -1,        // last loop-mode step tap (double-tap = that bar)
+    loopTapTime: 0,
     fullVelocity: false,    // Shift+Step 10: pads always play at 127
 
     init: function (host, midiIn, cursorTrack, cursorDevice) {
@@ -61,17 +68,21 @@ var MoveNotes = {
             self.drumMode = has;
             self.rebuildTable();
         });
-        this.drumPadBank = this.cursorDevice.createDrumPadBank(32);
+        this.drumPadBank = this.cursorDevice.createDrumPadBank(16);
         this.drumPadBank.scrollPosition().addValueObserver(function (pos) {
             self.drumScrollPos = pos;
             self.rebuildTable();
         });
         this.drumPadBank.scrollPosition().set(36);
-        for (var i = 0; i < 32; i++) {
+        for (var i = 0; i < 16; i++) {
             var pad = this.drumPadBank.getItemAt(i);
             pad.exists().markInterested();
             pad.color().markInterested();
             pad.name().markInterested();
+            this.padDeviceBanks[i] = pad.createDeviceBank(1);
+            this.padDeviceBanks[i].getDevice(0).exists().markInterested();
+            pad.volume().name().markInterested();
+            pad.volume().value().displayedValue().markInterested();
         }
 
         this.cursorTrack.color().markInterested();
@@ -81,6 +92,7 @@ var MoveNotes = {
         this.cursorClip.exists().markInterested();
         this.cursorClip.playingStep().markInterested();
         this.cursorClip.getLoopLength().markInterested();
+        this.cursorClip.getLoopStart().markInterested();
         this.cursorClip.isLoopEnabled().markInterested();
         this.stepCount = [];
         for (i = 0; i < 16; i++) this.stepCount[i] = 0;
@@ -100,6 +112,7 @@ var MoveNotes = {
         this.active = active;
         if (!active) this.overlayActive = false;
         this.heldKeys = {};
+        this.heldDrumPad = -1;
         this.rebuildTable();
     },
 
@@ -128,11 +141,26 @@ var MoveNotes = {
         this.noteInput.setKeyTranslationTable(table);
     },
 
+    /** MIDI note name in Move/Live convention (note 0 = C-2). */
+    noteName: function (key) {
+        return this.ROOT_NAMES[key % 12] + (Math.floor(key / 12) - 2);
+    },
+
+    /** Drum-bank index (0-15) for a left-half pad index, bottom-left = 0. */
+    drumIndexForPad: function (p) {
+        return (3 - Math.floor(p / 8)) * 4 + (p % 8);
+    },
+
     /** Sounding key for pad index 0-31 (may be out of MIDI range). */
     keyForPadIndex: function (p) {
-        if (this.drumMode) return this.drumScrollPos + p;
         var row = Math.floor(p / 8);
         var col = p % 8;
+        if (this.drumMode) {
+            // Left 4x4 = drum pads (bottom-left = lowest); right half is
+            // velocity levels, silent in the translation table.
+            if (col >= 4) return -1;
+            return this.drumScrollPos + (3 - row) * 4 + col;
+        }
         if (this.chromatic) {
             // Rows of fourths (+5 semitones per row)
             return 12 * this.octave + this.rootKey + row * 5 + col;
@@ -183,6 +211,31 @@ var MoveNotes = {
             }
         }
 
+        // Held drum pad + Volume encoder = that pad's chain volume (manual §18.5)
+        if (this.drumMode && this.heldDrumPad >= 0
+            && cc === MoveHardware.CC.MASTER) {
+            var padVol = this.drumPadBank.getItemAt(this.heldDrumPad).volume();
+            padVol.inc(MoveHardware.decodeDelta(value), modifiers.shift ? 512 : 128);
+            MoveNavigation.activeParameter = padVol;
+            host.requestFlush();
+            return true;
+        }
+
+        // Loop held + Up/Down = double / halve the clip loop length
+        if (modifiers.loop && (cc === MoveHardware.CC.UP || cc === MoveHardware.CC.DOWN)) {
+            modifiers.loopUsed = true;
+            if (!this.cursorClip.exists().get()) return true;
+            var curLen = this.cursorClip.getLoopLength().get();
+            var newLen = (cc === MoveHardware.CC.UP)
+                ? Math.min(1024, curLen * 2)
+                : Math.max(1, curLen / 2);
+            this.cursorClip.getLoopLength().set(newLen);
+            this.cursorClip.isLoopEnabled().set(true);
+            MoveNavigation.toast("Loop " + (newLen / 4) + " bars");
+            host.requestFlush();
+            return true;
+        }
+
         // Loop held + wheel = clip loop length (F20)
         if (modifiers.loop && cc === MoveHardware.CC.JOG_WHEEL) {
             modifiers.loopUsed = true;
@@ -199,8 +252,10 @@ var MoveNotes = {
             var dir = (cc === MoveHardware.CC.UP) ? 1 : -1;
             if (this.drumMode) {
                 var step = modifiers.shift ? 4 : 16;
-                var pos = Math.max(0, Math.min(92, this.drumScrollPos + dir * step));
+                var pos = Math.max(0, Math.min(112, this.drumScrollPos + dir * step));
                 this.drumPadBank.scrollPosition().set(pos);
+                MoveNavigation.toast("Pads " + this.noteName(pos)
+                    + "-" + this.noteName(pos + 15));
             } else if (modifiers.shift && !this.chromatic) {
                 // Shift+Up/Down: shift the in-key layout by one scale degree
                 this.degreeOffset = Math.max(-14, Math.min(14, this.degreeOffset + dir));
@@ -210,6 +265,8 @@ var MoveNotes = {
             } else {
                 this.octave = Math.max(0, Math.min(8, this.octave + dir));
                 this.rebuildTable();
+                MoveNavigation.toast("Octave " + this.octave + "  ("
+                    + this.noteName(12 * this.octave + this.rootKey) + ")");
             }
             host.requestFlush();
             return true;
@@ -230,8 +287,9 @@ var MoveNotes = {
     },
 
     /**
-     * Key & Scale overlay (Shift+Step 9): wheel = root, Up/Down = scale,
-     * click = toggle chromatic/in-key layout, Back/Shift+Step 9 = close.
+     * Key & Scale overlay (Shift+Step 9): wheel = root, Up/Down = octave,
+     * Left/Right = scale, click = toggle chromatic/in-key layout,
+     * Back/Shift+Step 9 = close.
      * Pads keep playing so changes can be auditioned live.
      * Returns true when the CC was consumed by the overlay.
      */
@@ -248,9 +306,16 @@ var MoveNotes = {
             return true;
         }
         if (cc === MoveHardware.CC.UP || cc === MoveHardware.CC.DOWN) {
-            var dir = (cc === MoveHardware.CC.DOWN) ? 1 : -1;
+            var dir = (cc === MoveHardware.CC.UP) ? 1 : -1;
+            this.octave = Math.max(0, Math.min(8, this.octave + dir));
+            this.rebuildTable();
+            host.requestFlush();
+            return true;
+        }
+        if (cc === MoveHardware.CC.LEFT || cc === MoveHardware.CC.RIGHT) {
+            var sdir = (cc === MoveHardware.CC.RIGHT) ? 1 : -1;
             var n = this.SCALES.length;
-            this.scaleIdx = ((this.scaleIdx + dir) % n + n) % n;
+            this.scaleIdx = ((this.scaleIdx + sdir) % n + n) % n;
             this.rebuildTable();
             host.requestFlush();
             return true;
@@ -359,10 +424,48 @@ var MoveNotes = {
         // Pads (68-99)
         if (note >= MoveHardware.NOTES.PAD_FIRST && note <= MoveHardware.NOTES.PAD_LAST) {
             var key = this.keyForPad(note);
+            // Drum sub-mode, right 4x4 = 16 velocity levels for the last
+            // played pad (bottom-left soft, top-right full).
+            if (this.drumMode && (note - 68) % 8 >= 4) {
+                if (isNoteOn) {
+                    var lvRow = Math.floor((note - 68) / 8);
+                    var level = (3 - lvRow) * 4 + ((note - 68) % 8 - 4);
+                    this.drumVelocity = Math.round((level + 1) * 127 / 16);
+                    this.cursorTrack.playNote(this.lastPlayedKey, this.drumVelocity);
+                    if (this.heldStep >= 0 && this.cursorClip.exists().get()) {
+                        this.cursorClip.toggleStep(this.heldStep,
+                            this.lastPlayedKey, this.drumVelocity);
+                        this.stepEdited = true;
+                    }
+                    MoveNavigation.toast("Velocity " + this.drumVelocity);
+                    host.requestFlush();
+                }
+                return true;
+            }
             if (isNoteOn) {
                 // Drum sub-mode gestures (F17b)
                 if (this.drumMode) {
-                    var padItem = this.drumPadBank.getItemAt(note - 68);
+                    var padIdx2 = this.drumIndexForPad(note - 68);
+                    var padItem = this.drumPadBank.getItemAt(padIdx2);
+                    if (modifiers.copy) {
+                        // Copy+pad, then pad: copy the pad's device (F17b)
+                        if (this.drumCopySource < 0) {
+                            this.drumCopySource = padIdx2;
+                            MoveNavigation.toast("Copy pad: choose target");
+                        } else {
+                            var srcDev = this.padDeviceBanks[this.drumCopySource]
+                                .getDevice(0);
+                            if (srcDev.exists().get()) {
+                                padItem.startOfDeviceChainInsertionPoint()
+                                    .copyDevices(srcDev);
+                                MoveNavigation.toast("Pad device copied");
+                            } else {
+                                MoveNavigation.toast("Source pad empty");
+                            }
+                            this.drumCopySource = -1;
+                        }
+                        return true;
+                    }
                     if (modifiers.shift) {
                         padItem.selectInEditor();
                         MoveNavigation.toast(padItem.name().get() || "Pad");
@@ -376,6 +479,7 @@ var MoveNotes = {
                 }
                 if (key >= 0) {
                     this.lastPlayedKey = key;
+                    if (this.drumMode) this.heldDrumPad = this.drumIndexForPad(note - 68);
                     this.heldKeys[key] = (this.heldKeys[key] || 0) + 1;
                     // Held step + pad = write that note into the step (Push-style)
                     if (this.heldStep >= 0 && this.cursorClip.exists().get()) {
@@ -384,9 +488,15 @@ var MoveNotes = {
                     }
                     host.requestFlush(); // sounding-pad highlight
                 }
-            } else if (key >= 0 && this.heldKeys[key]) {
-                if (--this.heldKeys[key] <= 0) delete this.heldKeys[key];
-                host.requestFlush();
+            } else {
+                if (this.drumMode
+                    && this.heldDrumPad === this.drumIndexForPad(note - 68)) {
+                    this.heldDrumPad = -1;
+                }
+                if (key >= 0 && this.heldKeys[key]) {
+                    if (--this.heldKeys[key] <= 0) delete this.heldKeys[key];
+                    host.requestFlush();
+                }
             }
             return true; // sound comes from the NoteInput
         }
@@ -396,13 +506,37 @@ var MoveNotes = {
         if (note >= MoveHardware.NOTES.STEP_FIRST && note <= MoveHardware.NOTES.STEP_LAST) {
             var stepIdx = note - MoveHardware.NOTES.STEP_FIRST;
 
-            // Loop held + step = set loop length in bars (F20)
+            // Loop held: steps = bars, Move-style (§18 Loop Mode).
+            // Tap bar n = loop bars 1..n; hold bar A + press bar B = loop
+            // A..B; double-tap a bar = loop just that bar.
             if (modifiers.loop) {
                 modifiers.loopUsed = true;
-                if (isNoteOn && this.cursorClip.exists().get()) {
-                    this.cursorClip.getLoopLength().set((stepIdx + 1) * 4);
+                if (isNoteOn) {
+                    if (!this.cursorClip.exists().get()) return true;
+                    var now = Date.now();
+                    if (this.loopAnchorStep >= 0 && this.loopAnchorStep !== stepIdx) {
+                        var a = Math.min(this.loopAnchorStep, stepIdx);
+                        var b = Math.max(this.loopAnchorStep, stepIdx);
+                        this.cursorClip.getLoopStart().set(a * 4);
+                        this.cursorClip.getLoopLength().set((b - a + 1) * 4);
+                        MoveNavigation.toast("Loop bars " + (a + 1) + "-" + (b + 1));
+                    } else if (this.loopTapStep === stepIdx
+                        && now - this.loopTapTime < 500) {
+                        this.cursorClip.getLoopStart().set(stepIdx * 4);
+                        this.cursorClip.getLoopLength().set(4);
+                        MoveNavigation.toast("Loop bar " + (stepIdx + 1));
+                    } else {
+                        this.loopAnchorStep = stepIdx;
+                        this.cursorClip.getLoopStart().set(0);
+                        this.cursorClip.getLoopLength().set((stepIdx + 1) * 4);
+                        MoveNavigation.toast("Loop " + (stepIdx + 1) + " bars");
+                    }
                     this.cursorClip.isLoopEnabled().set(true);
-                    MoveNavigation.toast("Loop " + (stepIdx + 1) + " bars");
+                    this.loopTapStep = stepIdx;
+                    this.loopTapTime = now;
+                    host.requestFlush();
+                } else if (this.loopAnchorStep === stepIdx) {
+                    this.loopAnchorStep = -1;
                 }
                 return true;
             }
@@ -416,8 +550,9 @@ var MoveNotes = {
                         var keys = [];
                         for (var k in this.heldKeys) keys.push(parseInt(k, 10));
                         if (keys.length === 0) keys.push(this.lastPlayedKey);
+                        var vel = this.drumMode ? this.drumVelocity : 100;
                         for (var j = 0; j < keys.length; j++) {
-                            this.cursorClip.toggleStep(stepIdx, keys[j], 100);
+                            this.cursorClip.toggleStep(stepIdx, keys[j], vel);
                         }
                     } else {
                         MoveNavigation.toast("No clip selected");
@@ -441,14 +576,23 @@ var MoveNotes = {
         if (this.drumMode) {
             for (i = 0; i < 32; i++) {
                 note = 68 + i;
-                var pad = this.drumPadBank.getItemAt(i);
-                color = MoveHardware.COLOR.BLACK;
-                if (this.heldKeys[this.drumScrollPos + i]) {
-                    color = MoveHardware.COLOR.GREEN; // sounding
-                } else if (pad.exists().get()) {
-                    var c = pad.color();
-                    color = MoveHardware.nearestColor(c.red() * 0.6, c.green() * 0.6, c.blue() * 0.6);
-                    if (color === 0) color = MoveHardware.COLOR.HAS_CLIP; // uncolored pads: dim white
+                if (i % 8 >= 4) {
+                    // Right 4x4: velocity levels; current level lit green
+                    var lvl = (3 - Math.floor(i / 8)) * 4 + (i % 8 - 4);
+                    var lvlVel = Math.round((lvl + 1) * 127 / 16);
+                    color = (lvlVel === this.drumVelocity)
+                        ? MoveHardware.COLOR.GREEN : MoveHardware.COLOR.HAS_CLIP;
+                } else {
+                    var padIdx = this.drumIndexForPad(i);
+                    var pad = this.drumPadBank.getItemAt(padIdx);
+                    color = MoveHardware.COLOR.BLACK;
+                    if (this.heldKeys[this.drumScrollPos + padIdx]) {
+                        color = MoveHardware.COLOR.GREEN; // sounding
+                    } else if (pad.exists().get()) {
+                        var c = pad.color();
+                        color = MoveHardware.nearestColor(c.red() * 0.6, c.green() * 0.6, c.blue() * 0.6);
+                        if (color === 0) color = MoveHardware.COLOR.HAS_CLIP; // uncolored pads: dim white
+                    }
                 }
                 MoveProtocol.ledNote(note, color);
             }
@@ -484,6 +628,21 @@ var MoveNotes = {
             else if (this.stepCount[i] > 0) color = MoveHardware.COLOR.WHITE;
             else color = MoveHardware.COLOR.BLACK;
             MoveProtocol.ledNote(note, color);
+        }
+    },
+
+    /**
+     * While Loop is held (Move-style Loop Mode): each step = one bar,
+     * white = inside the clip loop. Painted over the step row from flush.
+     */
+    updateLoopStepLEDs: function () {
+        var startBar = Math.round(this.cursorClip.getLoopStart().get() / 4);
+        var endBar = startBar
+            + Math.max(1, Math.round(this.cursorClip.getLoopLength().get() / 4));
+        for (var i = 0; i < 16; i++) {
+            var color = (i >= startBar && i < endBar)
+                ? MoveHardware.COLOR.WHITE : MoveHardware.COLOR.HAS_CLIP;
+            MoveProtocol.ledNote(MoveHardware.NOTES.STEP_FIRST + i, color);
         }
     }
 };
