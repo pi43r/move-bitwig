@@ -211,7 +211,10 @@ Driven by v0.4 hardware feedback:
 - Sequencer: user expects Move behavior — pressing a pad shows *that pad's*
   sequence in the step row for XO editing → v0.6
 
-## Done — v0.6.0 sequencer + browser batch (2026-07-13, untested)
+## Done — v0.6.0 sequencer + browser batch (2026-07-13)
+
+**Hardware-tested 2026-07-13: no major bugs found — released as v0.6.0
+(first public release; release.json + module.json bumped, logo added).**
 
 Bitwig-side only, driven by v0.5 hardware feedback:
 
@@ -264,15 +267,23 @@ Bitwig-side only, driven by v0.5 hardware feedback:
 - [ ] **I6 — Logging & test setup.** Document `debug_log_on` + `debug.log` tail for the
       module; look at schwung's `tools/pytest-schwung` e2e harness for scripted MIDI
       injection tests against real hardware.
-- [ ] **I7 — Catalog packaging.** `release.json` exists; wire up GitHub release workflow
-      (`<id>-module.tar.gz`) so the module installs via schwung-manager, and consider a
-      catalog PR once stable.
+- [x] **I7 (workflow) — Release automation.** `.github/workflows/release.yml`:
+      pushing a `v*` tag builds `move-bitwig-module.tar.gz` +
+      `move-bitwig-controller-scripts.zip` and publishes the GitHub release
+      (guards that module.json/release.json versions match the tag).
+- [ ] **I7 (catalog)** — consider a schwung catalog PR once stable.
 - [x] **I9 — resolved.** Pads use `LED_NOTE` + `nearestColor()` (palette); RGB sysex
       kept for CC-addressed LEDs only (track row 40-43, Sample 118, knob rings 71-78).
 - [x] **I10 — Knob-ring value feedback** — rings 71-78 show macro values as brightness.
 
 ## Remaining features
 
+- [ ] **Sequencer rework (post-v0.6 priority).** User: "the sequencer needs more
+      work." Candidates to scope: page-follow while playing (playhead beyond 16
+      steps), page indicator on the display/icon row, per-step velocity/length
+      view, note-length painting (hold step A + press step B = long note),
+      swing/repeat integration, and better behavior when the clip is shorter
+      than a page.
 - [ ] **Global Key & Scale sync** — blocked: not in the controller API (checked
       through API 21 / Bitwig 5.3). Re-check on new Bitwig releases.
 - [ ] **F25 — Note repeat** (Shift+Step 11): script-generated repeats while pad held,

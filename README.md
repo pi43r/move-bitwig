@@ -1,8 +1,10 @@
-# Bitwig Studio Move Controller
+# Move Bitwig
+
+<p align="center">
+  <img src="assets/movebitwig.svg" alt="Move Bitwig logo" width="480">
+</p>
 
 A complete integration script and module to turn the **Ableton Move** into a dedicated, deeply-integrated MIDI controller for Bitwig Studio.
-
-See **SPEC.md** for the full feature specification and **TODO.md** for the backlog.
 
 ## Architecture
 
@@ -27,10 +29,10 @@ The link is supervised: Bitwig pings every second; the module shows
 "Waiting for Bitwig…" and clears LEDs when the link drops, and full state is resent on
 reconnect.
 
-## Current Status: v0.6 — per-pad XO sequencer, device browser, **pending hardware test**
+## Current Status: v0.6 — first public release (beta)
 
-See the hardware test checklist in TODO.md. v0.6 is Bitwig-side only (the
-module is unchanged since 0.4.0).
+Hardware-tested on a real Move. Expect rough edges — bug reports welcome.
+Known area that still needs work: the step sequencer (see TODO.md).
 
 ## Control Reference
 
@@ -45,66 +47,66 @@ Three modes, cycled with **Menu** (Menu LED: off = SESSION, bright = NOTE, dim =
 pressing one jumps the window there).
 
 ### Transport & Global
-| Control          | Action                        | LED               |
-| :--------------- | :---------------------------- | :---------------- |
-| **PLAY**         | Toggle Play / Stop            | Green = playing   |
-| **Shift + PLAY** | Re-trigger playback           |                   |
-| **REC**          | Arranger record (NOTE mode: launcher overdub) | Red = active |
-| **Shift + REC**  | The other record target       |                   |
-| **UNDO**         | Undo                          |                   |
-| **Shift + UNDO** | Redo                          |                   |
-| **MENU**         | Cycle SESSION / NOTE / MIXER  | Bright=NOTE, dim=MIXER |
-| **Shift + MENU** | Session Overview on/off       |                   |
-| **LOOP (tap)**   | Toggle arranger loop          | Lit = loop on     |
-| **LOOP (hold)**  | Loop Mode (NOTE mode, see below) |                |
-| **CAPTURE**      | Tap tempo                     |                   |
-| **Shift + CAPTURE** | Add device (opens browser) |                   |
-| **Shift + Wheel**| Tempo (1 BPM / detent)        |                   |
+| Control             | Action                                        | LED                    |
+| :------------------ | :-------------------------------------------- | :--------------------- |
+| **PLAY**            | Toggle Play / Stop                            | Green = playing        |
+| **Shift + PLAY**    | Re-trigger playback                           |                        |
+| **REC**             | Arranger record (NOTE mode: launcher overdub) | Red = active           |
+| **Shift + REC**     | The other record target                       |                        |
+| **UNDO**            | Undo                                          |                        |
+| **Shift + UNDO**    | Redo                                          |                        |
+| **MENU**            | Cycle SESSION / NOTE / MIXER                  | Bright=NOTE, dim=MIXER |
+| **Shift + MENU**    | Session Overview on/off                       |                        |
+| **LOOP (tap)**      | Toggle arranger loop                          | Lit = loop on          |
+| **LOOP (hold)**     | Loop Mode (NOTE mode, see below)              |                        |
+| **CAPTURE**         | Tap tempo                                     |                        |
+| **Shift + CAPTURE** | Add device (opens browser)                    |                        |
+| **Shift + Wheel**   | Tempo (1 BPM / detent)                        |                        |
 
 ### Shift + Step actions
 While Shift is held the **icon LEDs below the steps** show the map: dim
 white = has a function, green = that toggle is on.
 
-| Combo               | Action                            |
-| :------------------ | :-------------------------------- |
-| **Shift + Step 3**  | Cycle quantize amount (100/50/75%)|
-| **Shift + Step 6**  | Toggle metronome                  |
-| **Shift + Step 7**  | Toggle global groove              |
-| **Shift + Step 9**  | Key & Scale overlay (NOTE mode)   |
-| **Shift + Step 10** | Toggle full velocity              |
-| **Shift + Step 15** | Double clip content               |
-| **Shift + Step 16** | Quantize clip (set amount)        |
+| Combo               | Action                             |
+| :------------------ | :--------------------------------- |
+| **Shift + Step 3**  | Cycle quantize amount (100/50/75%) |
+| **Shift + Step 6**  | Toggle metronome                   |
+| **Shift + Step 7**  | Toggle global groove               |
+| **Shift + Step 9**  | Key & Scale overlay (NOTE mode)    |
+| **Shift + Step 10** | Toggle full velocity               |
+| **Shift + Step 15** | Double clip content                |
+| **Shift + Step 16** | Quantize clip (set amount)         |
 
 ### Track Buttons 1-4 (bank tracks 1-4)
-| Control              | Action                     | LED                                        |
-| :------------------- | :------------------------- | :----------------------------------------- |
-| **Press**            | Select track               | White = selected, red = armed, else color  |
-| **Press twice**      | Toggle record arm          |                                            |
-| **Shift + Track**    | Launch scene 1-4           |                                            |
-| **Mute + Track**     | Mute/unmute that track     |                                            |
-| **Delete + Track**   | Delete track               |                                            |
-| **Copy + Track**     | Duplicate track            |                                            |
-| **Hold + Vol knob**  | That track's volume        |                                            |
+| Control             | Action                 | LED                                       |
+| :------------------ | :--------------------- | :---------------------------------------- |
+| **Press**           | Select track           | White = selected, red = armed, else color |
+| **Press twice**     | Toggle record arm      |                                           |
+| **Shift + Track**   | Launch scene 1-4       |                                           |
+| **Mute + Track**    | Mute/unmute that track |                                           |
+| **Delete + Track**  | Delete track           |                                           |
+| **Copy + Track**    | Duplicate track        |                                           |
+| **Hold + Vol knob** | That track's volume    |                                           |
 
 ### Mute & Misc (selected track)
-| Control              | Action                        | LED                |
-| :------------------- | :---------------------------- | :----------------- |
-| **MUTE (tap)**       | Toggle Mute                   | Lit = muted/soloed |
-| **Shift + MUTE tap** | Toggle Solo                   |                    |
-| **MUTE (hold)**      | Modifier for other gestures   |                    |
-| **Sample button**    | Toggle Record Arm             | Red ring = armed   |
-| **Master Knob**      | Master volume (Shift = fine)  |                    |
+| Control              | Action                       | LED                |
+| :------------------- | :--------------------------- | :----------------- |
+| **MUTE (tap)**       | Toggle Mute                  | Lit = muted/soloed |
+| **Shift + MUTE tap** | Toggle Solo                  |                    |
+| **MUTE (hold)**      | Modifier for other gestures  |                    |
+| **Sample button**    | Toggle Record Arm            | Red ring = armed   |
+| **Master Knob**      | Master volume (Shift = fine) |                    |
 
 ### SESSION mode — pads & steps
-| Control               | Action                                    | LED                                              |
-| :-------------------- | :---------------------------------------- | :----------------------------------------------- |
-| **Pad**               | Launch clip (record if empty + armed)     | Clip color; dim = stopped, blink = queued        |
-| **Shift + Pad**       | Select clip slot                          |                                                  |
-| **Delete + Pad**      | Delete clip                               |                                                  |
-| **Copy + Pad, Pad**   | Copy clip from first to second pad        |                                                  |
-| **Steps 1,3,…,15**    | Select track 1-8                          | Track color, white = selected                    |
-| **Steps 2,4,…,14**    | Stop clip in track 1-7                    | Dim white                                        |
-| **Step 16**           | Stop all clips                            | Dim red                                          |
+| Control             | Action                                | LED                                       |
+| :------------------ | :------------------------------------ | :---------------------------------------- |
+| **Pad**             | Launch clip (record if empty + armed) | Clip color; dim = stopped, blink = queued |
+| **Shift + Pad**     | Select clip slot                      |                                           |
+| **Delete + Pad**    | Delete clip                           |                                           |
+| **Copy + Pad, Pad** | Copy clip from first to second pad    |                                           |
+| **Steps 1,3,…,15**  | Select track 1-8                      | Track color, white = selected             |
+| **Steps 2,4,…,14**  | Stop clip in track 1-7                | Dim white                                 |
+| **Step 16**         | Stop all clips                        | Dim red                                   |
 
 In **Session Overview** (Shift+Menu): pads = 8×4 blocks, white = current window,
 dim = inside the project; pressing a pad jumps there and returns to SESSION.
@@ -113,36 +115,36 @@ In SESSION and MIXER the display's second line shows the window position
 (`Trk 1-8  Scn 1-4`).
 
 ### NOTE mode — pads & steps
-| Control            | Action                                              |
-| :----------------- | :-------------------------------------------------- |
-| **Pads**           | Play notes: in-key layout, root pads = track color; |
-|                    | Sounding pads light green                           |
-| **Up / Down**      | Octave ±1 (toast shows octave; drum: pad window ±16, Shift = ±4) |
-| **Shift + U / D**  | Shift in-key layout ±1 scale degree                 |
-| **Steps 1-16**     | Tap: XO-toggle the selected note (last played pad)  |
-| **Pads held + Step** | Write the held chord into that step               |
-| **Step held + Pads** | Play pads to write them into the held step        |
-| **Step held + Vol**| Velocity of all notes in that step                  |
-| **Step held + Wheel** | Note length (Shift = fine, 1/64)                 |
-| **Step held + L / R** | Nudge notes one step left / right                |
-| **Step held + U / D** | Transpose ±1 semitone (Shift = ±12)              |
-| **Left / Right**   | Step-sequencer page                                 |
-| Step LEDs          | White = selected note on that step, dim = other     |
-|                    | notes, green = playhead (Move-style: press a pad to |
-|                    | see and edit *its* sequence)                        |
+| Control               | Action                                                           |
+| :-------------------- | :--------------------------------------------------------------- |
+| **Pads**              | Play notes: in-key layout, root pads = track color;              |
+|                       | Sounding pads light green                                        |
+| **Up / Down**         | Octave ±1 (toast shows octave; drum: pad window ±16, Shift = ±4) |
+| **Shift + U / D**     | Shift in-key layout ±1 scale degree                              |
+| **Steps 1-16**        | Tap: XO-toggle the selected note (last played pad)               |
+| **Pads held + Step**  | Write the held chord into that step                              |
+| **Step held + Pads**  | Play pads to write them into the held step                       |
+| **Step held + Vol**   | Velocity of all notes in that step                               |
+| **Step held + Wheel** | Note length (Shift = fine, 1/64)                                 |
+| **Step held + L / R** | Nudge notes one step left / right                                |
+| **Step held + U / D** | Transpose ±1 semitone (Shift = ±12)                              |
+| **Left / Right**      | Step-sequencer page                                              |
+| Step LEDs             | White = selected note on that step, dim = other                  |
+|                       | notes, green = playhead (Move-style: press a pad to              |
+|                       | see and edit *its* sequence)                                     |
 
 #### Loop Mode (hold Loop)
 While Loop is held, each step button = one bar; step LEDs show the clip loop
 in white (Move-style).
 
-| Control            | Action                                       |
-| :----------------- | :------------------------------------------- |
-| **Tap step n**     | Loop bars 1..n                               |
-| **Double-tap step n** | Loop just bar n                           |
-| **Hold step A + press B** | Loop bars A..B                        |
-| **Loop + Up / Down** | Double / halve the loop length             |
-| **Loop + Copy**    | Double the clip content                      |
-| **Loop + Wheel**   | Loop length ±1 bar (Shift = 1/16)            |
+| Control                   | Action                            |
+| :------------------------ | :-------------------------------- |
+| **Tap step n**            | Loop bars 1..n                    |
+| **Double-tap step n**     | Loop just bar n                   |
+| **Hold step A + press B** | Loop bars A..B                    |
+| **Loop + Up / Down**      | Double / halve the loop length    |
+| **Loop + Copy**           | Double the clip content           |
+| **Loop + Wheel**          | Loop length ±1 bar (Shift = 1/16) |
 
 #### Drum layout (auto with a Drum Machine)
 The **left 4×4** plays the drum pads (bottom-left = lowest, pad colors from
@@ -157,77 +159,84 @@ window (toast shows the range). Pressing a pad shows its sequence in the
 step row for XO editing.
 
 #### Key & Scale overlay (Shift + Step 9)
-| Control          | Action                                  |
-| :--------------- | :-------------------------------------- |
-| **Jog Wheel**    | Root note (C, C#, … B)                  |
-| **Up / Down**    | Octave ±1                               |
-| **Left / Right** | Scale (Major, Minor, Dorian, … 10 total)|
-| **Jog Click**    | Toggle In-Key / Chromatic layout        |
-| **Back**         | Close overlay (or Shift+Step 9 again)   |
+| Control          | Action                                   |
+| :--------------- | :--------------------------------------- |
+| **Jog Wheel**    | Root note (C, C#, … B)                   |
+| **Up / Down**    | Octave ±1                                |
+| **Left / Right** | Scale (Major, Minor, Dorian, … 10 total) |
+| **Jog Click**    | Toggle In-Key / Chromatic layout         |
+| **Back**         | Close overlay (or Shift+Step 9 again)    |
 
 Pads keep playing while the overlay is open, so changes can be auditioned.
 Chromatic layout = rows of fourths; LEDs: root = track color, in-scale = dim
 white, out-of-scale = off.
 
 ### MIXER mode
-| Control            | Action                                    | LED                      |
-| :----------------- | :---------------------------------------- | :----------------------- |
-| **Knobs 1-8**      | Track 1-8 volume (Shift = fine)           | Ring = color × volume    |
-| **Mute + Knob**    | Track pan (Shift = fine)                  |                          |
-| **Copy + Knob**    | Send A (Copy + Shift + Knob = Send B)     |                          |
-| **Pad row 1 (top)**| Toggle record arm                         | Red = armed              |
-| **Pad row 2**      | Toggle solo                               | Yellow = soloed          |
-| **Pad row 3**      | Toggle mute                               | Orange = muted           |
-| **Pad row 4 (bot)**| Select track                              | White = selected         |
-| **Steps**          | Same as SESSION (select / stop / stop all)|                          |
-| **Knob touch**     | Show that track's volume on the display   |                          |
+| Control             | Action                                     | LED                   |
+| :------------------ | :----------------------------------------- | :-------------------- |
+| **Knobs 1-8**       | Track 1-8 volume (Shift = fine)            | Ring = color × volume |
+| **Mute + Knob**     | Track pan (Shift = fine)                   |                       |
+| **Copy + Knob**     | Send A (Copy + Shift + Knob = Send B)      |                       |
+| **Pad row 1 (top)** | Toggle record arm                          | Red = armed           |
+| **Pad row 2**       | Toggle solo                                | Yellow = soloed       |
+| **Pad row 3**       | Toggle mute                                | Orange = muted        |
+| **Pad row 4 (bot)** | Select track                               | White = selected      |
+| **Steps**           | Same as SESSION (select / stop / stop all) |                       |
+| **Knob touch**      | Show that track's volume on the display    |                       |
 
 ### Navigation
-| Control            | Action                                      |
-| :----------------- | :------------------------------------------ |
-| **Left / Right**   | Scroll track bank (SESSION)                 |
-| **Up / Down**      | Scroll scene bank (SESSION)                 |
-| **Shift + U / D**  | Scroll scenes by page                       |
-| **Shift + L / R**  | Previous / next Remote Controls page        |
-| **Jog Wheel**      | Select previous / next device               |
-| **Jog Click**      | Fold / unfold device                        |
-| **Mute + Click**   | Toggle device on/off                        |
-| **Shift + Click**  | Replace current device (opens browser)      |
-| **Delete + Click** | Delete current device                       |
-| **Shift + Capture**| Add a device after the current one (browser)|
+| Control             | Action                                       |
+| :------------------ | :------------------------------------------- |
+| **Left / Right**    | Scroll track bank (SESSION)                  |
+| **Up / Down**       | Scroll scene bank (SESSION)                  |
+| **Shift + U / D**   | Scroll scenes by page                        |
+| **Shift + L / R**   | Previous / next Remote Controls page         |
+| **Jog Wheel**       | Select previous / next device                |
+| **Jog Click**       | Fold / unfold device                         |
+| **Mute + Click**    | Toggle device on/off                         |
+| **Shift + Click**   | Replace current device (opens browser)       |
+| **Delete + Click**  | Delete current device                        |
+| **Shift + Capture** | Add a device after the current one (browser) |
 
 ### Device & Parameters
-| Control                 | Action                         | Feedback                     |
-| :---------------------- | :----------------------------- | :--------------------------- |
-| **Knobs 1-8**           | Remote Controls (Shift = fine) | Name + value on OLED, ring LED |
+| Control                 | Action                         | Feedback                                             |
+| :---------------------- | :----------------------------- | :--------------------------------------------------- |
+| **Knobs 1-8**           | Remote Controls (Shift = fine) | Name + value on OLED, ring LED                       |
 | **Knob Touch**          | Focus parameter                | Its name & value while touched (rings show the rest) |
-| **Delete + Knob Touch** | Reset parameter                |                              |
-| **Master Knob Touch**   | Focus master volume            | Name & value                 |
+| **Delete + Knob Touch** | Reset parameter                |                                                      |
+| **Master Knob Touch**   | Focus master volume            | Name & value                                         |
 
 ### Device Browser (Shift+Capture = add, Shift+Jog Click = replace)
 While the Bitwig popup browser is open, the display shows the current tab
 and selection:
 
-| Control       | Action                                   |
-| :------------ | :--------------------------------------- |
-| **Jog Wheel** | Previous / next result                   |
-| **Up / Down** | Content-type tab (Devices, Presets, …)   |
-| **Jog Click** | Load the selection                       |
-| **Back**      | Cancel                                   |
+| Control       | Action                                 |
+| :------------ | :------------------------------------- |
+| **Jog Wheel** | Previous / next result                 |
+| **Up / Down** | Content-type tab (Devices, Presets, …) |
+| **Jog Click** | Load the selection                     |
+| **Back**      | Cancel                                 |
 
 ## Installation
 
+Grab both assets from the [latest release](https://github.com/pi43r/move-bitwig/releases/latest):
+`move-bitwig-module.tar.gz` (for the Move) and
+`move-bitwig-controller-scripts.zip` (for Bitwig) — or build from source as
+described below.
+
 ### 1. Hardware Setup (Ableton Move)
 1. Ensure your Move has the `schwung` runtime installed.
-2. Deploy the module:
+2. Deploy the module — either install the release tarball via
+   schwung-manager, or from a checkout:
    ```bash
    ./scripts/build.sh && ./scripts/install.sh
    ```
 3. On the Move: enter Shadow Mode (`Shift + Vol + Knob 1`), go to the Tools /
-   Overtake menu, and select **Bitwig Move Controller**.
+   Overtake menu, and select **Move Bitwig**.
 
 ### 2. Software Setup (Bitwig Studio)
-1. Copy the contents of `Controller Scripts/` to your Bitwig Controller Scripts folder:
+1. Unzip `move-bitwig-controller-scripts.zip` (or copy the contents of
+   `Controller Scripts/`) into your Bitwig Controller Scripts folder:
    - **Windows**: `%USERPROFILE%\Documents\Bitwig Studio\Controller Scripts\Move\`
    - **macOS**: `~/Documents/Bitwig Studio/Controller Scripts/Move/`
 
@@ -247,3 +256,12 @@ and selection:
   Module errors are logged with a `move-bitwig` prefix via `console.log`.
 
 
+## Disclaimer
+
+Move Bitwig is not associated with either the Ableton AG or Bitwig GmbH. I made it in my free time and you can use and modify it however you wish.
+Most of the code was generated using AI coding agents (Claude mainly), I tested manually and looked through some of the code.
+
+Thanks to DrivenByMoss for tutorials and code on scripting Bitwig.
+
+If something is broken or you have feature requests, open an [Issue](https://github.com/pi43r/move-bitwig/issues) on github or ask in the Schwung [discord](https://discord.gg/GHWaZCC9bQ).
+Pull Requests are welcome!
