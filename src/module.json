@@ -1,13 +1,13 @@
 {
-    "id": "move-bitwig",
-    "name": "Move Bitwig",
-    "version": "0.6.0",
-    "abbrev": "BWG",
-    "description": "Control surface bridge for Bitwig Studio",
-    "author": "pi43r",
-    "ui": "ui.js",
-    "api_version": 1,
-    "component_type": "overtake",
-    "claims_master_knob": true,
-    "raw_midi": true
+  "id": "move-bitwig",
+  "name": "Move Bitwig",
+  "version": "1.0.0",
+  "abbrev": "BWG",
+  "description": "Control surface bridge for Bitwig Studio",
+  "author": "pi43r",
+  "ui": "ui.js",
+  "api_version": 1,
+  "component_type": "overtake",
+  "claims_master_knob": true,
+  "raw_midi": true
 }
