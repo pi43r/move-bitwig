@@ -1,0 +1,230 @@
+{
+  "title": "Move Bitwig",
+  "children": [
+    {
+      "title": "Start here",
+      "lines": [
+        "Control Bitwig 6",
+        "from Ableton Move.",
+        "",
+        "Needs Schwung and",
+        "a USB-C data cable.",
+        "",
+        "Install BOTH parts:",
+        "Move module plus",
+        "Bitwig scripts.",
+        "Module alone cannot",
+        "connect to Bitwig."
+      ]
+    },
+    {
+      "title": "Get Bitwig scripts",
+      "lines": [
+        "On your computer:",
+        "github.com/pi43r/",
+        "move-bitwig",
+        "",
+        "Open Releases.",
+        "Download the",
+        "controller scripts",
+        "ZIP from the SAME",
+        "release as this",
+        "Move module.",
+        "",
+        "Extract ALL .js",
+        "files into a Move",
+        "folder inside your",
+        "Bitwig Controller",
+        "Scripts folder.",
+        "",
+        "Full install paths:",
+        "repository README."
+      ]
+    },
+    {
+      "title": "Connect",
+      "lines": [
+        "In Bitwig Settings:",
+        "Controllers > Add",
+        "Ableton > Move.",
+        "",
+        "Choose matching",
+        "MIDI input/output:",
+        "Ableton Move",
+        "(Standalone Port).",
+        "",
+        "Open Move Bitwig",
+        "in Schwung.",
+        "Wait for the track",
+        "name on screen."
+      ]
+    },
+    {
+      "title": "Create a song",
+      "lines": [
+        "Shift + Step 1:",
+        "new instrument.",
+        "Wheel: choose sound.",
+        "Click: load sound.",
+        "",
+        "Shift + Step 2:",
+        "new audio track.",
+        "",
+        "Play a note pad,",
+        "then tap steps.",
+        "First step creates",
+        "a clip if needed.",
+        "",
+        "Menu: Session.",
+        "Press clip to play."
+      ]
+    },
+    {
+      "title": "Session",
+      "lines": [
+        "Columns 1-7: tracks.",
+        "Rows: four scenes.",
+        "Green column: scenes",
+        "Shift + scene: stop",
+        "clips in that scene.",
+        "",
+        "Odd steps 1-13:",
+        "select tracks 1-7.",
+        "Even steps 2-14:",
+        "stop those tracks.",
+        "15: select Main.",
+        "16: stop all clips.",
+        "",
+        "Dark unused columns",
+        "do nothing. Empty",
+        "slots glow dimly.",
+        "Armed empty slot:",
+        "create/record clip.",
+        "Unarmed: stop track."
+      ]
+    },
+    {
+      "title": "Notes and steps",
+      "lines": [
+        "Menu: Note/Session.",
+        "Left track keys:",
+        "select tracks 1-4.",
+        "",
+        "Pads: play notes.",
+        "Step: toggle note.",
+        "Hold pads + step:",
+        "enter a chord.",
+        "",
+        "Hold step, turn:",
+        "Volume = velocity",
+        "Wheel = length",
+        "Shift = fine length",
+        "",
+        "Left/Right: pages.",
+        "Up/Down: octave.",
+        "Shift + Step 9:",
+        "key and scale."
+      ]
+    },
+    {
+      "title": "Drums",
+      "lines": [
+        "Left 16 pads: drums.",
+        "Right 16: modifiers.",
+        "Hold modifier pad,",
+        "turn wheel, then",
+        "press step to apply.",
+        "Double tap: reset.",
+        "",
+        "Top row modifiers:",
+        "Velocity / Length",
+        "Chance / Repeat",
+        "",
+        "Next row: Condition,",
+        "Every N, Vel spread,",
+        "Transpose.",
+        "",
+        "Next: Pan, Gain,",
+        "Timbre, Pressure.",
+        "",
+        "Bottom: Release vel,",
+        "Repeat velocity end,",
+        "Repeat curve,",
+        "Repeat vel curve.",
+        "",
+        "Mute + step: mute",
+        "the selected note."
+      ]
+    },
+    {
+      "title": "Loop and settings",
+      "lines": [
+        "Hold Loop + wheel:",
+        "change loop length.",
+        "Shift: fine length.",
+        "Loop + Copy:",
+        "double clip content.",
+        "",
+        "Shift + Step 3:",
+        "Workflow settings.",
+        "Shift + Step 5:",
+        "tempo settings.",
+        "Shift + Step 6:",
+        "metronome.",
+        "Shift + Step 15:",
+        "double content.",
+        "Shift + Step 16:",
+        "quantize clip."
+      ]
+    },
+    {
+      "title": "Devices and volume",
+      "lines": [
+        "Knobs: remote params",
+        "Shift: fine adjust.",
+        "Shift + Left/Right:",
+        "remote page.",
+        "",
+        "Capture + wheel:",
+        "change device.",
+        "Capture + click:",
+        "browse its presets.",
+        "Add Shift: add FX.",
+        "",
+        "Volume setting in",
+        "Bitwig: Master gain",
+        "or Last touched.",
+        "Last touched keeps",
+        "the last mouse",
+        "parameter selected.",
+        "Other knobs do not",
+        "replace that target.",
+        "",
+        "Shift + Menu: Mixer."
+      ]
+    },
+    {
+      "title": "Connection help",
+      "lines": [
+        "Missing Mac port?",
+        "Disconnect Move.",
+        "Audio MIDI Setup:",
+        "remove Move entry.",
+        "Reconnect Move.",
+        "",
+        "Windows duplicates?",
+        "Close MIDI apps and",
+        "Bitwig. Reboot Move,",
+        "reconnect, then",
+        "reopen Bitwig.",
+        "Use one controller",
+        "entry per Move.",
+        "",
+        "More help and logs:",
+        "github.com/pi43r/",
+        "move-bitwig",
+        "README and Issues."
+      ]
+    }
+  ]
+}
