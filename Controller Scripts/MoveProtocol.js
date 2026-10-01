@@ -18,10 +18,12 @@ var MoveProtocol = (function () {
     var LINK_TIMEOUT_MS = 3500;
     var MAX_PAIRS_PER_MSG = 16;  // LED_NOTE / LED_CC pairs per sysex
     var MAX_QUADS_PER_MSG = 8;   // LED_RGB quads per sysex
-    var MAX_TEXT_LEN = 24;
+    var MAX_TEXT_LEN = 48;
 
     var out = null;
     var connected = false;
+    var sequenceSupported = false;
+    var textLimit = 24; // capability bit 1 permits longer, scrolling labels
     var lastPongMs = 0;
     var pingSeq = 0;
 
@@ -30,13 +32,13 @@ var MoveProtocol = (function () {
     var wantCC = [];     // cc -> palette color
     var wantRGB = [];    // idx -> [r7, g7, b7]
     var wantText = ["", "", "", ""];
-    var wantBars = null;     // array of 8 ints 0-127, or null = hidden
+    var wantSequence = null;
+    var sentSequence = null;
     // Sent state (what the device has)
     var sentNote = [];
     var sentCC = [];
     var sentRGB = [];
     var sentText = [null, null, null, null];
-    var sentBars = "-";      // joined string for cheap compare
 
     function hex2(v) {
         var s = v.toString(16);
@@ -58,12 +60,13 @@ var MoveProtocol = (function () {
         sentCC = [];
         sentRGB = [];
         sentText = [null, null, null, null];
-        sentBars = "-";
+        sentSequence = null;
     }
 
     function schedulePing() {
         host.scheduleTask(function () {
             sendCmd(0x00, [pingSeq]);
+            if (!connected) sendCmd(0x7E, [PROTO_VERSION]);
             pingSeq = (pingSeq + 1) & 0x7F;
             if (connected && Date.now() - lastPongMs > LINK_TIMEOUT_MS) {
                 connected = false;
@@ -84,18 +87,23 @@ var MoveProtocol = (function () {
         onSysex: function (data) {
             var msg = data.toLowerCase().replace(/\s+/g, "");
             if (msg.indexOf("f0" + HEADER) !== 0) return false;
+            if (!/^f0(?:[0-7][0-9a-f])+f7$/.test(msg)) return true;
             // Layout: f0(0-1) header(2-7) cmd(8-9) payload(10..) f7
             var cmd = parseInt(msg.substr(8, 2), 16);
             if (cmd === 0x40) { // PONG
+                if (msg.length !== 14) return true;
                 lastPongMs = Date.now();
-                if (!connected) {
-                    connected = true;
-                    host.println("MoveProtocol: Move connected");
-                    markAllDirty(); // module may have rebooted: resend everything
-                    host.requestFlush();
-                }
             } else if (cmd === 0x41) { // HELLO_ACK
+                if (msg.length !== 14 && msg.length !== 16) return true;
                 var ver = parseInt(msg.substr(10, 2), 16);
+                if (ver !== PROTO_VERSION) {
+                    connected = false;
+                    sequenceSupported = false;
+                    host.println("MoveProtocol: incompatible module; install matching release assets");
+                    return true;
+                }
+                sequenceSupported = msg.length >= 16 && (parseInt(msg.substr(12, 2), 16) & 1) !== 0;
+                textLimit = msg.length >= 16 && (parseInt(msg.substr(12, 2), 16) & 2) !== 0 ? 48 : 24;
                 connected = true;
                 lastPongMs = Date.now();
                 host.println("MoveProtocol: handshake ok (module proto v" + ver + ")");
@@ -108,6 +116,9 @@ var MoveProtocol = (function () {
         isConnected: function () {
             return connected;
         },
+
+        /** Optional protocol-v2 capability 1: bar overview (MoveSequencer.overview) or null. */
+        sequence: function (values) { wantSequence = values; },
 
         /** Palette LED on a note address (pads 68-99, steps 16-31). */
         ledNote: function (note, color) {
@@ -133,24 +144,6 @@ var MoveProtocol = (function () {
             wantRGB[idx] = (r7 << 14) | (g7 << 7) | b7; // pack for cheap compare
         },
 
-        /**
-         * Show 8 parameter bars on the lower display half (replaces text
-         * lines 3+4 while active). values = array of 8 numbers 0.0-1.0,
-         * or null to hide the bars again.
-         */
-        bars: function (values) {
-            if (values === null || values === undefined) {
-                wantBars = null;
-                return;
-            }
-            var out = [];
-            for (var i = 0; i < 8; i++) {
-                var v = values[i] || 0;
-                out[i] = Math.max(0, Math.min(127, Math.round(v * 127)));
-            }
-            wantBars = out;
-        },
-
         /** Display line 1-4. */
         text: function (line, str) {
             if (str === null || str === undefined) str = "";
@@ -169,8 +162,16 @@ var MoveProtocol = (function () {
 
         /** Send all pending diffs. Call once from the script's flush(). */
         flush: function () {
-            if (out === null) return;
+            if (out === null || !connected) return;
             var payload, i, n;
+
+            if (sequenceSupported) {
+                var sequenceKey = wantSequence === null ? "" : wantSequence.join(",");
+                if (sequenceKey !== sentSequence) {
+                    sendCmd(0x07, wantSequence === null ? [] : wantSequence);
+                    sentSequence = sequenceKey;
+                }
+            }
 
             // LED_NOTE diffs
             payload = [];
@@ -215,18 +216,11 @@ var MoveProtocol = (function () {
             }
             if (payload.length > 0) sendCmd(0x04, payload);
 
-            // BARS diff
-            var barsKey = wantBars === null ? "" : wantBars.join(",");
-            if (barsKey !== sentBars) {
-                sendCmd(0x06, wantBars === null ? [] : wantBars);
-                sentBars = barsKey;
-            }
-
             // TEXT diffs
             for (i = 0; i < 4; i++) {
                 if (wantText[i] !== sentText[i]) {
                     payload = [i];
-                    for (n = 0; n < wantText[i].length; n++) {
+                    for (n = 0; n < Math.min(wantText[i].length, textLimit); n++) {
                         var c = wantText[i].charCodeAt(n);
                         payload.push(c >= 32 && c <= 126 ? c : 63); // '?'
                     }

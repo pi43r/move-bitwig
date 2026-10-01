@@ -24,7 +24,6 @@ var MoveNotes = {
     chromatic: false,       // chromatic layout (rows of fourths) vs in-key
     overlayActive: false,   // Key & Scale overlay (Shift+Step 9)
     drumScrollPos: 36,      // first drum pad note in the bank window (16 pads)
-    drumVelocity: 100,      // fixed velocity from the right-half level pads
     heldDrumPad: -1,        // held left-half pad (bank index): +Volume = chain vol
 
     SCALES: [
@@ -42,6 +41,10 @@ var MoveNotes = {
     ROOT_NAMES: ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
 
     lastPlayedKey: 60,      // sequencer target key (last pad played)
+    drumNames: {},          // retain names when the playable drum window scrolls
+    playingKeys: {},
+    pendingNotes: null,
+    trackGeneration: 0,
     heldKeys: {},           // key -> held-pad count (chords onto steps)
     stepHas: {},            // "x_y" -> true for note starts in the clip window
     stepCount: [],          // notes per step column (16)
@@ -60,8 +63,24 @@ var MoveNotes = {
         this.noteInput = midiIn.createNoteInput("Move Pads", "90????", "80????");
         this.noteInput.setShouldConsumeEvents(false);
 
-        // Drum sub-mode detection + 32-pad window
+        // Drum sub-mode detection + 16-pad window
         var self = this;
+        this.cursorTrack.position().addValueObserver(function () {
+            self.drumNames = {};
+            self.playingKeys = {};
+            self.heldKeys = {};
+            self.trackGeneration++;
+            self.cancelPendingNotes();
+            self.cancelStepGesture();
+            MoveNavigation.requestedTrack = null;
+            host.requestFlush();
+        });
+        this.cursorTrack.playingNotes().addValueObserver(function (notes) {
+            self.playingKeys = {};
+            for (var n = 0; n < notes.length; n++) self.playingKeys[notes[n].pitch()] = true;
+            host.requestFlush();
+        });
+        this.cursorDevice.name().addValueObserver(function () { self.drumNames = {}; });
         this.cursorDevice.hasDrumPads().addValueObserver(function (has) {
             self.drumMode = has;
             self.rebuildTable();
@@ -78,19 +97,31 @@ var MoveNotes = {
             pad.color().markInterested();
             pad.name().markInterested();
             pad.mute().markInterested();
+            pad.volume().exists().markInterested();
             pad.volume().name().markInterested();
+            pad.volume().value().markInterested();
             pad.volume().value().displayedValue().markInterested();
         }
 
         this.cursorTrack.color().markInterested();
 
         // Step sequencer: 16 steps wide, full key range so y = MIDI key.
-        this.cursorClip = host.createLauncherCursorClip(16, 128);
+        this.cursorClip = cursorTrack.createLauncherCursorClip(16, 128);
+        this.cursorClip.isPinned().set(false);
+        this.cursorClip.getTrack().position().markInterested();
         this.cursorClip.exists().markInterested();
+        this.cursorClip.clipLauncherSlot().sceneIndex().markInterested();
+        for (var slotIndex = 0; slotIndex < 64; slotIndex++) {
+            var slot = cursorTrack.clipLauncherSlotBank().getItemAt(slotIndex);
+            slot.hasContent().markInterested();
+            slot.sceneIndex().markInterested();
+        }
         this.cursorClip.playingStep().markInterested();
+        this.cursorClip.getPlayStop().markInterested();
         this.cursorClip.getLoopLength().markInterested();
         this.cursorClip.getLoopStart().markInterested();
         this.cursorClip.isLoopEnabled().markInterested();
+        MoveSequencer.init(this.cursorClip);
         this.stepCount = [];
         for (i = 0; i < 16; i++) this.stepCount[i] = 0;
         this.cursorClip.addStepDataObserver(function (x, y, state) {
@@ -104,13 +135,135 @@ var MoveNotes = {
         this.rebuildTable();
     },
 
+    trackMatches: function () {
+        if (!this.cursorTrack) return false;
+        var position = this.cursorTrack.position().get();
+        return (MoveNavigation.requestedTrack === null || MoveNavigation.requestedTrack === position)
+            && this.cursorClip.getTrack().position().get() === position;
+    },
+
+    cancelPendingNotes: function () { this.pendingNotes = null; },
+
+    // Create only on deliberate step entry. Never send a delayed write to a new track.
+    createClipAndStep: function (step) {
+        if (!this.cursorTrack || !this.cursorTrack.exists().get()
+            || !this.cursorTrack.canHoldNoteData().get()) {
+            MoveNavigation.toast("Choose an instrument track");
+            return;
+        }
+        if (MoveNavigation.requestedTrack !== null
+            && MoveNavigation.requestedTrack !== this.cursorTrack.position().get()) return;
+        if (this.cursorClip.exists().get() && !this.trackMatches()) {
+            MoveNavigation.toast("Track selection updating");
+            return;
+        }
+        var keys = [];
+        for (var key in this.heldKeys) keys.push(parseInt(key, 10));
+        if (!keys.length) keys.push(this.lastPlayedKey);
+        if (this.pendingNotes) {
+            this.pendingNotes.steps.push({ step: step, keys: keys });
+            return;
+        }
+        var scene = this.cursorClip.clipLauncherSlot().sceneIndex().get();
+        if (scene < 0) {
+            for (var i = 0; i < 64; i++) {
+                var slot = this.cursorTrack.clipLauncherSlotBank().getItemAt(i);
+                if (!slot.hasContent().get()) { scene = slot.sceneIndex().get(); break; }
+            }
+        }
+        if (scene < 0) { MoveNavigation.toast("Select an empty clip slot"); return; }
+        this.pendingNotes = { generation: this.trackGeneration, scene: scene,
+            deadline: Date.now() + 2000, steps: [{ step: step, keys: keys }] };
+        this.cursorTrack.createNewLauncherClip(scene);
+        MoveNavigation.toast("New clip");
+    },
+
+    flushPendingNotes: function () {
+        var pending = this.pendingNotes;
+        if (!pending) return;
+        if (pending.generation !== this.trackGeneration || Date.now() > pending.deadline) {
+            this.cancelPendingNotes();
+            return;
+        }
+        if (!MoveSequencer.hasClip() || !this.trackMatches()) return;
+        if (this.cursorClip.clipLauncherSlot().sceneIndex().get() !== pending.scene) {
+            this.cancelPendingNotes();
+            return;
+        }
+        this.cancelPendingNotes();
+        for (var i = 0; i < pending.steps.length; i++) {
+            var entry = pending.steps[i];
+            if (!MoveSequencer.canEdit(entry.step)) continue;
+            for (var j = 0; j < entry.keys.length; j++) this.toggleNote(entry.step, entry.keys[j], 100);
+        }
+        MoveFeedback.showClip();
+    },
+
+    toggleNote: function (x, key, velocity) {
+        if (!MoveSequencer.canEdit(x)) return;
+        this.cursorClip.toggleStep(x, key, velocity);
+    },
+
+    /** The selected drum's note at step x, or null. */
+    drumStep: function (x) {
+        if (!MoveSequencer.canEdit(x) || !this.stepHas[x + "_" + this.lastPlayedKey]) return null;
+        return this.cursorClip.getStep(0, x, this.lastPlayedKey);
+    },
+
+    toggleStepMute: function (x) {
+        var step = this.drumStep(x);
+        if (!step) {
+            MoveNavigation.toast("No " + this.selectedNoteLabel() + " on step " + (x + 1));
+            return;
+        }
+        var muted = !step.isMuted();
+        step.setIsMuted(muted);
+        MoveNavigation.toast("Step " + (x + 1) + (muted ? " muted" : " unmuted"));
+        host.requestFlush();
+    },
+
+    /** Write the held modifier's value into the selected drum's note at step x. */
+    applyModifier: function (x) {
+        var mod = MoveDrumMods.held;
+        var step = this.drumStep(x);
+        if (!step) {
+            MoveNavigation.toast("No " + this.selectedNoteLabel() + " on step " + (x + 1));
+            return;
+        }
+        MoveDrumMods.apply(step, mod);
+        MoveNavigation.toast("Step " + (x + 1) + ": " + MoveDrumMods.MODS[mod].name
+            + " " + MoveDrumMods.label(mod));
+    },
+
+    selectedNoteLabel: function () {
+        if (!this.drumMode) return this.noteName(this.lastPlayedKey);
+        var index = this.lastPlayedKey - this.drumScrollPos;
+        if (index >= 0 && index < 16) {
+            var pad = this.drumPadBank.getItemAt(index);
+            var name = pad.name().get();
+            if (pad.exists().get() && name) this.drumNames[this.lastPlayedKey] = name;
+            else delete this.drumNames[this.lastPlayedKey];
+        }
+        return this.drumNames[this.lastPlayedKey] || "Drum " + this.noteName(this.lastPlayedKey);
+    },
+
     /** Called when the UI mode changes (Menu button). */
     setActive: function (active) {
         this.active = active;
+        this.cancelPendingNotes();
+        this.cancelStepGesture();
+        this.loopAnchorStep = -1;
+        this.loopTapStep = -1;
         if (!active) this.overlayActive = false;
+        MoveDrumMods.held = -1;
         this.heldKeys = {};
         this.heldDrumPad = -1;
         this.rebuildTable();
+    },
+
+    cancelStepGesture: function () {
+        this.heldStep = -1;
+        this.stepEdited = false;
     },
 
     scale: function () {
@@ -120,7 +273,7 @@ var MoveNotes = {
     /**
      * Key translation: pad note (68-99) -> sounding MIDI key, -1 = silent.
      * Instrument: in-key layout, rows step by 3 scale degrees (fourth-ish).
-     * Drum: 32 pads map 1:1 onto the drum pad bank window.
+     * Drum: the left 16 pads play drums; the right 16 are MoveDrumMods.
      */
     rebuildTable: function () {
         if (this.noteInput === null) return;
@@ -155,7 +308,7 @@ var MoveNotes = {
         var col = p % 8;
         if (this.drumMode) {
             // Left 4x4 = drum pads (bottom-left = lowest); right half is
-            // velocity levels, silent in the translation table.
+            // note-expression modifiers, silent in the translation table.
             if (col >= 4) return -1;
             return this.drumScrollPos + row * 4 + col;
         }
@@ -186,9 +339,25 @@ var MoveNotes = {
     handleCC: function (cc, value, modifiers) {
         if (value === 0) return false;
 
+        // Held drum modifier + wheel = its value (and the held step's, if any)
+        if (this.drumMode && MoveDrumMods.held >= 0 && cc === MoveHardware.CC.JOG_WHEEL) {
+            MoveDrumMods.turn(MoveHardware.decodeDelta(value), modifiers.shift);
+            if (this.heldStep >= 0) {
+                this.stepEdited = true;
+                var held = this.drumStep(this.heldStep);
+                if (held) MoveDrumMods.apply(held, MoveDrumMods.held);
+            }
+            host.requestFlush();
+            return true;
+        }
+
         // Held step: Volume = velocity, wheel = length, Up/Down = transpose,
         // Left/Right = nudge by one step (F19)
         if (this.heldStep >= 0) {
+            if (!MoveSequencer.canEdit(this.heldStep)) {
+                this.cancelStepGesture();
+                return true;
+            }
             if (cc === MoveHardware.CC.MASTER) {
                 this.adjustStepVelocity(MoveHardware.decodeDelta(value));
                 return true;
@@ -214,7 +383,7 @@ var MoveNotes = {
             && cc === MoveHardware.CC.MASTER) {
             var padVol = this.drumPadBank.getItemAt(this.heldDrumPad).volume();
             padVol.inc(MoveHardware.decodeDelta(value), modifiers.shift ? 512 : 128);
-            MoveNavigation.activeParameter = padVol;
+            MoveNavigation.focusParameter(padVol);
             host.requestFlush();
             return true;
         }
@@ -222,7 +391,7 @@ var MoveNotes = {
         // Loop held + Up/Down = double / halve the clip loop length
         if (modifiers.loop && (cc === MoveHardware.CC.UP || cc === MoveHardware.CC.DOWN)) {
             modifiers.loopUsed = true;
-            if (!this.cursorClip.exists().get()) return true;
+            if (!MoveSequencer.hasClip()) return true;
             var curLen = this.cursorClip.getLoopLength().get();
             var newLen = (cc === MoveHardware.CC.UP)
                 ? Math.min(1024, curLen * 2)
@@ -237,7 +406,7 @@ var MoveNotes = {
         // Loop held + wheel = clip loop length (F20)
         if (modifiers.loop && cc === MoveHardware.CC.JOG_WHEEL) {
             modifiers.loopUsed = true;
-            if (!this.cursorClip.exists().get()) return true;
+            if (!MoveSequencer.hasClip()) return true;
             var d = MoveHardware.decodeDelta(value) * (modifiers.shift ? 0.25 : 4.0);
             var len = Math.max(0.25, this.cursorClip.getLoopLength().get() + d);
             this.cursorClip.getLoopLength().set(len);
@@ -270,14 +439,13 @@ var MoveNotes = {
             return true;
         }
 
-        // Plain Left/Right = step-sequencer page; Shift+L/R falls through
-        // to MoveNavigation (remote controls page).
+        // Shift+L/R retains remote-page navigation; plain arrows stay in the loop.
         if (cc === MoveHardware.CC.LEFT && !modifiers.shift) {
-            this.cursorClip.scrollStepsPageBackwards();
+            MoveSequencer.navigate(-1);
             return true;
         }
         if (cc === MoveHardware.CC.RIGHT && !modifiers.shift) {
-            this.cursorClip.scrollStepsPageForward();
+            MoveSequencer.navigate(1);
             return true;
         }
 
@@ -336,17 +504,22 @@ var MoveNotes = {
 
     /** Overlay display content (replaces the normal display while open). */
     updateOverlayDisplay: function () {
-        MoveProtocol.text(1, "* Key & Scale *");
-        MoveProtocol.text(2, "Root:  " + this.ROOT_NAMES[this.rootKey]
-            + "  Oct: " + this.octave);
-        MoveProtocol.text(3, "Scale: " + this.SCALES[this.scaleIdx][0]);
-        MoveProtocol.text(4, this.chromatic ? "Layout: Chromatic" : "Layout: In Key");
+        MoveScreen.frame("SCALE", this.ROOT_NAMES[this.rootKey] + " " + this.SCALES[this.scaleIdx][0],
+            "Octave " + this.octave + "  " + (this.chromatic ? "Chromatic" : "In key"),
+            "Wheel=root L/R=scale");
     },
 
     /** Move all notes in the held step by (dx steps, dy semitones). */
     moveHeldStep: function (dx, dy, label) {
         this.stepEdited = true;
+        if (!MoveSequencer.canEdit(this.heldStep + dx)) {
+            MoveNavigation.toast("Step boundary");
+            return;
+        }
         var cells = this.heldStepCells();
+        for (var c = 0; c < cells.length; c++) {
+            if (cells[c][1] + dy < 0 || cells[c][1] + dy > 127) return;
+        }
         for (var i = 0; i < cells.length; i++) {
             this.cursorClip.moveStep(cells[i][0], cells[i][1], dx, dy);
         }
@@ -422,25 +595,30 @@ var MoveNotes = {
         // Pads (68-99)
         if (note >= MoveHardware.NOTES.PAD_FIRST && note <= MoveHardware.NOTES.PAD_LAST) {
             var key = this.keyForPad(note);
-            // Drum sub-mode, right 4x4 = 16 velocity levels for the last
-            // played pad (bottom-left soft, top-right full).
-            if (this.drumMode && (note - 68) % 8 >= 4) {
+            var mod = this.drumMode ? MoveDrumMods.indexForPad(note - 68) : -1;
+            if (mod >= 0) {
                 if (isNoteOn) {
-                    var lvRow = Math.floor((note - 68) / 8);
-                    var level = lvRow * 4 + ((note - 68) % 8 - 4);
-                    this.drumVelocity = Math.round((level + 1) * 127 / 16);
-                    this.cursorTrack.playNote(this.lastPlayedKey, this.drumVelocity);
-                    if (this.heldStep >= 0 && this.cursorClip.exists().get()) {
-                        this.cursorClip.toggleStep(this.heldStep,
-                            this.lastPlayedKey, this.drumVelocity);
+                    MoveDrumMods.press(mod);
+                    if (this.heldStep >= 0) {
                         this.stepEdited = true;
+                        this.applyModifier(this.heldStep);
                     }
-                    MoveNavigation.toast("Velocity " + this.drumVelocity);
-                    host.requestFlush();
-                }
+                } else MoveDrumMods.release(mod);
+                host.requestFlush();
                 return true;
             }
             if (isNoteOn) {
+                // Delete + pad: remove every note of that pitch/drum from the clip
+                if (modifiers.del && key >= 0) {
+                    this.lastPlayedKey = key;
+                    if (!MoveSequencer.hasClip()) MoveNavigation.toast("No clip selected");
+                    else {
+                        this.cursorClip.clearStepsAtY(0, key);
+                        MoveNavigation.toast("Cleared " + this.selectedNoteLabel());
+                    }
+                    host.requestFlush();
+                    return true;
+                }
                 // Drum sub-mode gestures (F17b)
                 if (this.drumMode) {
                     var padIdx2 = this.drumIndexForPad(note - 68);
@@ -464,8 +642,8 @@ var MoveNotes = {
                     if (this.drumMode) this.heldDrumPad = this.drumIndexForPad(note - 68);
                     this.heldKeys[key] = (this.heldKeys[key] || 0) + 1;
                     // Held step + pad = write that note into the step (Push-style)
-                    if (this.heldStep >= 0 && this.cursorClip.exists().get()) {
-                        this.cursorClip.toggleStep(this.heldStep, key, velocity);
+                    if (MoveSequencer.canEdit(this.heldStep)) {
+                        this.toggleNote(this.heldStep, key, velocity);
                         this.stepEdited = true;
                     }
                     host.requestFlush(); // sounding-pad highlight
@@ -494,7 +672,7 @@ var MoveNotes = {
             if (modifiers.loop) {
                 modifiers.loopUsed = true;
                 if (isNoteOn) {
-                    if (!this.cursorClip.exists().get()) return true;
+                    if (!MoveSequencer.hasClip()) return true;
                     var now = Date.now();
                     if (this.loopAnchorStep >= 0 && this.loopAnchorStep !== stepIdx) {
                         var a = Math.min(this.loopAnchorStep, stepIdx);
@@ -522,19 +700,38 @@ var MoveNotes = {
                 }
                 return true;
             }
+            // Mute held + step: mute/unmute the selected note there
+            if (modifiers.mute) {
+                modifiers.muteUsed = true;
+                if (isNoteOn) this.toggleStepMute(stepIdx);
+                return true;
+            }
+            if (isNoteOn && this.drumMode && MoveDrumMods.held >= 0) {
+                this.applyModifier(stepIdx);
+                return true;
+            }
             if (isNoteOn) {
+                if (!MoveSequencer.hasClip()) {
+                    this.createClipAndStep(stepIdx);
+                    return true;
+                }
+                if (!MoveSequencer.canEdit(stepIdx)) {
+                    MoveNavigation.toast("Outside loop");
+                    return true;
+                }
                 this.heldStep = stepIdx;
                 this.stepEdited = false;
+                MoveFeedback.selectStep(stepIdx);
             } else if (this.heldStep === stepIdx) {
                 if (!this.stepEdited) {
-                    if (this.cursorClip.exists().get()) {
+                    if (MoveSequencer.canEdit(stepIdx)) {
                         // Held pads = write the whole chord, else last played key
                         var keys = [];
                         for (var k in this.heldKeys) keys.push(parseInt(k, 10));
                         if (keys.length === 0) keys.push(this.lastPlayedKey);
-                        var vel = this.drumMode ? this.drumVelocity : 100;
+                        var vel = 100;
                         for (var j = 0; j < keys.length; j++) {
-                            this.cursorClip.toggleStep(stepIdx, keys[j], vel);
+                            this.toggleNote(stepIdx, keys[j], vel);
                         }
                     } else {
                         MoveNavigation.toast("No clip selected");
@@ -542,6 +739,7 @@ var MoveNotes = {
                 }
                 this.heldStep = -1;
             }
+            host.requestFlush();
             return true;
         }
 
@@ -559,16 +757,12 @@ var MoveNotes = {
             for (i = 0; i < 32; i++) {
                 note = 68 + i;
                 if (i % 8 >= 4) {
-                    // Right 4x4: velocity levels; current level lit green
-                    var lvl = Math.floor(i / 8) * 4 + (i % 8 - 4);
-                    var lvlVel = Math.round((lvl + 1) * 127 / 16);
-                    color = (lvlVel === this.drumVelocity)
-                        ? MoveHardware.COLOR.GREEN : MoveHardware.COLOR.HAS_CLIP;
+                    color = MoveDrumMods.color(MoveDrumMods.indexForPad(i));
                 } else {
                     var padIdx = this.drumIndexForPad(i);
                     var pad = this.drumPadBank.getItemAt(padIdx);
                     color = MoveHardware.COLOR.BLACK;
-                    if (this.heldKeys[this.drumScrollPos + padIdx]) {
+                    if (this.heldKeys[this.drumScrollPos + padIdx] || this.playingKeys[this.drumScrollPos + padIdx]) {
                         color = MoveHardware.COLOR.GREEN; // sounding
                     } else if (pad.exists().get()) {
                         var c = pad.color();
@@ -589,7 +783,7 @@ var MoveNotes = {
             var scale = this.scale();
             for (i = 0; i < 32; i++) {
                 note = 68 + i;
-                if (this.heldKeys[this.keyForPadIndex(i)]) {
+                if (this.heldKeys[this.keyForPadIndex(i)] || this.playingKeys[this.keyForPadIndex(i)]) {
                     color = MoveHardware.COLOR.GREEN; // sounding (incl. duplicates)
                 } else if (this.chromatic) {
                     // Root pads = track color, in-scale = dim white, rest = off
@@ -607,14 +801,19 @@ var MoveNotes = {
         }
 
         // Steps show the *selected* note's sequence (last played / selected
-        // pad, Move-style XO): white = selected note here, dim = other notes,
-        // green = playhead.
-        var playing = this.cursorClip.playingStep().get(); // -1 when not playing
+        // pad): white = selected note, red = held step, green = playhead.
+        // Other pitches are deliberately hidden. A held drum modifier shows
+        // which of those notes carry a non-default value for it. Muted notes are dim.
+        var playing = MoveSequencer.playingIndex();
+        var showMod = this.drumMode && MoveDrumMods.held >= 0;
         for (i = 0; i < 16; i++) {
             note = MoveHardware.NOTES.STEP_FIRST + i;
-            if (i === playing) color = MoveHardware.COLOR.GREEN;
-            else if (this.stepHas[i + "_" + this.lastPlayedKey]) color = MoveHardware.COLOR.WHITE;
-            else if (this.stepCount[i] > 0) color = MoveHardware.COLOR.HAS_CLIP;
+            var step = this.drumStep(i);
+            if (!MoveSequencer.canEdit(i)) color = MoveHardware.COLOR.BLACK;
+            else if (showMod) color = MoveDrumMods.stepColor(step);
+            else if (i === this.heldStep) color = MoveHardware.COLOR.RED;
+            else if (i === playing) color = MoveHardware.COLOR.GREEN;
+            else if (step) color = step.isMuted() ? MoveHardware.COLOR.HAS_CLIP : MoveHardware.COLOR.WHITE;
             else color = MoveHardware.COLOR.BLACK;
             MoveProtocol.ledNote(note, color);
         }

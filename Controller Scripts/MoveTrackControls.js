@@ -2,9 +2,10 @@
  * MoveTrackControls.js
  * Track buttons 1-4 (manual parity: select tracks), Mute/Solo, Record Arm.
  *
- * Track button gestures (buttons map to bank tracks 1-4):
- *   press            select track   (double-press: toggle arm)
- *   Shift + press    launch scene 1-4 (former behavior)
+ * Track button gestures (buttons map to bank tracks 1-4; unlit and inactive
+ * in SESSION, where the pad rows are the tracks):
+ *   press            select track + show its clip (double-press: toggle arm)
+ *   Shift + press    select track, show its device chain, launch its selected clip
  *   Mute held        mute/unmute that track
  *   Delete held      delete track
  *   Copy held        duplicate track
@@ -16,7 +17,6 @@
 
 var MoveTrackControls = {
     cursorTrack: null,
-    sceneBank: null,
     trackBank: null,
 
     heldTrack: -1,          // track button currently held (-1 = none)
@@ -25,20 +25,13 @@ var MoveTrackControls = {
 
     DOUBLE_PRESS_MS: 350,
 
-    init: function (host, cursorTrack, sceneBank, trackBank) {
+    init: function (host, cursorTrack, trackBank) {
         this.cursorTrack = cursorTrack;
-        this.sceneBank = sceneBank;
         this.trackBank = trackBank;
 
         this.cursorTrack.mute().markInterested();
         this.cursorTrack.solo().markInterested();
         this.cursorTrack.arm().markInterested();
-
-        for (var i = 0; i < 4; i++) {
-            var scene = this.sceneBank.getItemAt(i);
-            scene.color().markInterested();
-            scene.exists().markInterested();
-        }
         // Per-track observers (exists/color/arm/selected) are registered by
         // MoveNavigation on the shared trackBank.
     },
@@ -56,7 +49,7 @@ var MoveTrackControls = {
         for (var i = 0; i < 4; i++) {
             var cc = MoveHardware.CC.TRACK_SELECT_1 - i; // 43, 42, 41, 40
             var track = this.trackBank.getItemAt(i);
-            if (!track.exists().get()) {
+            if (ui.mode === "session" || !track.exists().get() || MoveGrid.isMain(track)) {
                 MoveProtocol.ledRGB(cc, 0, 0, 0);
             } else if (track.arm().get()) {
                 MoveProtocol.ledRGB(cc, 1.0, 0, 0);
@@ -73,6 +66,18 @@ var MoveTrackControls = {
         MoveProtocol.ledRGB(MoveHardware.CC.SAMPLE, armed ? 1.0 : 0, 0, 0);
     },
 
+    /** Launch the clip the sequencer follows, once the cursor has moved to track `position`. */
+    launchSelectedClip: function (position) {
+        host.scheduleTask(function () {
+            if (MoveNavigation.cursorTrack.position().get() !== position || !MoveSequencer.hasClip()) {
+                MoveNavigation.toast("No clip selected");
+                return;
+            }
+            MoveNotes.cursorClip.clipLauncherSlot().launch();
+            MoveNavigation.toast("Clip launched");
+        }, 200);
+    },
+
     /**
      * Handle physical CC input (called from onMidi0).
      * Needs both presses (127) and releases (0).
@@ -80,6 +85,7 @@ var MoveTrackControls = {
     handleCC: function (cc, value, modifiers) {
         // --- Mute: tap = action, hold = modifier -------------------------
         if (cc === MoveHardware.CC.MUTE) {
+            host.requestFlush();
             if (value === 127) {
                 modifiers.mute = true;
                 modifiers.muteUsed = false;
@@ -107,10 +113,13 @@ var MoveTrackControls = {
                 return true;
             }
 
+            if (ui.mode === "session") return true;
             var track = this.trackBank.getItemAt(idx);
+            if (!track.exists().get() || MoveGrid.isMain(track)) return true;
 
             if (modifiers.shift) {
-                this.sceneBank.getItemAt(idx).launch(); // Shift+Track = scene
+                MoveNavigation.selectTrack(track, true);
+                this.launchSelectedClip(track.position().get());
                 return true;
             }
             if (modifiers.del) {
@@ -133,7 +142,7 @@ var MoveTrackControls = {
             if (now - this.lastPressMs[idx] < this.DOUBLE_PRESS_MS) {
                 track.arm().toggle();
             } else {
-                track.selectInEditor();
+                MoveNavigation.selectTrack(track);
             }
             this.lastPressMs[idx] = now;
             return true;

@@ -1,6 +1,6 @@
 /**
  * MoveMixer.js
- * MIXER mode: knobs 1-8 = volumes of the 8 bank tracks, pad rows = per-track
+ * MIXER mode: knobs 1-8 = volumes of the 7-track window and Main, pad rows = per-track
  * toggles, step buttons keep their SESSION behavior (select/stop).
  *
  * Pad rows (top to bottom):
@@ -22,16 +22,18 @@ var MoveMixer = {
     init: function (host, trackBank) {
         this.trackBank = trackBank;
         for (var t = 0; t < 8; t++) {
-            var track = this.trackBank.getItemAt(t);
+            var track = MoveNavigation.channelAt(t);
             track.solo().markInterested();
+            track.volume().exists().markInterested();
             track.volume().name().markInterested();
             track.volume().value().markInterested();
             track.volume().value().displayedValue().markInterested();
+            track.pan().exists().markInterested();
             track.pan().name().markInterested();
             track.pan().value().markInterested();
             track.pan().value().displayedValue().markInterested();
             // Sends layer (Copy held + knob; bank has 2 sends)
-            for (var s = 0; s < 2; s++) {
+            for (var s = 0; t < 7 && s < 2; s++) {
                 var send = track.sendBank().getItemAt(s);
                 send.name().markInterested();
                 send.value().markInterested();
@@ -51,22 +53,13 @@ var MoveMixer = {
 
         if (cc >= MoveHardware.CC.KNOB_FIRST && cc <= MoveHardware.CC.KNOB_LAST) {
             var idx = cc - MoveHardware.CC.KNOB_FIRST;
-            var track = this.trackBank.getItemAt(idx);
             var delta = MoveHardware.decodeDelta(value);
-            if (delta !== 0) {
-                // Copy held = sends layer (Shift picks send B), Mute held =
-                // pan (F26b), otherwise volume
-                var param = track.volume();
-                var fine = modifiers.shift;
-                if (modifiers.copy) {
-                    param = track.sendBank().getItemAt(modifiers.shift ? 1 : 0);
-                    fine = false; // Shift selects the send here
-                } else if (modifiers.mute) {
-                    param = track.pan();
-                    modifiers.muteUsed = true;
-                }
-                param.inc(delta, fine ? 512 : 128);
-                MoveNavigation.activeParameter = param;
+            var param = MoveNavigation.mixerParameter(idx, modifiers);
+            if (delta !== 0 && param) {
+                if (modifiers.mute) modifiers.muteUsed = true;
+                // Shift selects send B in the sends layer, otherwise fine
+                param.inc(delta, modifiers.shift && !modifiers.copy ? 512 : 128);
+                MoveNavigation.focusParameter(param);
                 host.requestFlush();
             }
             return true;
@@ -88,14 +81,14 @@ var MoveMixer = {
         var cell = MoveHardware.getPadCoordinate(note);
         if (!cell) return true;
 
-        var track = this.trackBank.getItemAt(cell.track);
-        if (!track.exists().get()) return true;
+        var track = MoveNavigation.channelAt(cell.col);
+        if (!track.exists().get() || (cell.col < 7 && MoveGrid.isMain(track))) return true;
 
-        switch (cell.scene) { // scene 0 = top row
+        switch (cell.row) { // row 0 = top
             case 0: track.arm().toggle(); break;
             case 1: track.solo().toggle(); break;
             case 2: track.mute().toggle(); break;
-            case 3: track.selectInEditor(); break;
+            case 3: MoveNavigation.selectTrack(track); break;
         }
         return true;
     },
@@ -106,9 +99,9 @@ var MoveMixer = {
      */
     updateKnobLEDs: function () {
         for (var t = 0; t < 8; t++) {
-            var track = this.trackBank.getItemAt(t);
+            var track = MoveNavigation.channelAt(t);
             var r = 0, g = 0, b = 0;
-            if (track.exists().get()) {
+            if (track.exists().get() && (t === 7 || !MoveGrid.isMain(track))) {
                 var c = track.color();
                 r = c.red(); g = c.green(); b = c.blue();
                 if (r === 0 && g === 0 && b === 0) { r = 1; g = 1; b = 1; }
@@ -124,8 +117,8 @@ var MoveMixer = {
      */
     updatePadLEDs: function () {
         for (var t = 0; t < 8; t++) {
-            var track = this.trackBank.getItemAt(t);
-            var exists = track.exists().get();
+            var track = MoveNavigation.channelAt(t);
+            var exists = track.exists().get() && (t === 7 || !MoveGrid.isMain(track));
 
             var armColor = 0, soloColor = 0, muteColor = 0, selColor = 0;
             if (exists) {
