@@ -4,7 +4,7 @@
   <img src="assets/movebitwig.svg" alt="Move Bitwig logo" width="480">
 </p>
 
-Turn **Ableton Move** into a groovebox for **Bitwig Studio**: choose a sound, play pads, build a sequence, and launch your song.
+Use **Ableton Move** as a **Bitwig Controller**: choose a sound, play pads, build a sequence, and launch your song.
 
 - **Session:** launch clips and select tracks.
 - **Note:** play melodic or drum pads and edit a 16-step sequence.

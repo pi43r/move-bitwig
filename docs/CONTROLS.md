@@ -1,6 +1,6 @@
 # Move Bitwig controls
 
-![Pad, knob, track and step numbering](../assets/control-map.svg)
+![Move top panel: knobs, pads, steps, navigation and modifier buttons](../assets/control-map.svg)
 
 **Menu switches Session and Note. Shift + Menu opens Mixer.** Shift keeps your current screen visible and changes only the footer hints. Step buttons are numbered 1–16, left to right.
 

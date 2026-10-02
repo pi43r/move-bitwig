@@ -1,213 +1,272 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="690" viewBox="0 0 960 690" role="img" aria-labelledby="title desc">
-<title id="title">Move Bitwig pad layouts</title>
-<desc id="desc">Session has seven track columns and a green scene column. Bottom buttons select and stop each track, then select Main and stop all. Drums use the left sixteen pads to play and the right sixteen pads for note expressions. In Note, the bottom row is a sixteen-step sequencer.</desc>
-<rect width="960" height="690" rx="18" fill="#202329"/>
-<g font-family="sans-serif" fill="#eef0f3" text-anchor="middle">
-<text x="480" y="34" font-size="23">Move Bitwig · pad layouts</text>
-<text x="480" y="62" font-size="15">Menu: Session / Note    ·    Shift + Menu: Mixer    ·    Knobs 1–8: device parameters</text>
-<text x="480" y="101" font-size="20">Session</text>
-<text x="203" y="124" font-size="13" fill="#eef0f3">Track 1</text>
-<rect x="160" y="136" width="86" height="27" rx="5" fill="#425965"/>
-<text x="203" y="154" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="160" y="170" width="86" height="27" rx="5" fill="#425965"/>
-<text x="203" y="188" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="160" y="204" width="86" height="27" rx="5" fill="#425965"/>
-<text x="203" y="222" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="160" y="238" width="86" height="27" rx="5" fill="#425965"/>
-<text x="203" y="256" font-size="12" fill="#eef0f3">Clip</text>
-<text x="297" y="124" font-size="13" fill="#eef0f3">Track 2</text>
-<rect x="254" y="136" width="86" height="27" rx="5" fill="#425965"/>
-<text x="297" y="154" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="254" y="170" width="86" height="27" rx="5" fill="#425965"/>
-<text x="297" y="188" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="254" y="204" width="86" height="27" rx="5" fill="#425965"/>
-<text x="297" y="222" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="254" y="238" width="86" height="27" rx="5" fill="#425965"/>
-<text x="297" y="256" font-size="12" fill="#eef0f3">Clip</text>
-<text x="391" y="124" font-size="13" fill="#eef0f3">Track 3</text>
-<rect x="348" y="136" width="86" height="27" rx="5" fill="#425965"/>
-<text x="391" y="154" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="348" y="170" width="86" height="27" rx="5" fill="#425965"/>
-<text x="391" y="188" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="348" y="204" width="86" height="27" rx="5" fill="#425965"/>
-<text x="391" y="222" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="348" y="238" width="86" height="27" rx="5" fill="#425965"/>
-<text x="391" y="256" font-size="12" fill="#eef0f3">Clip</text>
-<text x="485" y="124" font-size="13" fill="#eef0f3">Track 4</text>
-<rect x="442" y="136" width="86" height="27" rx="5" fill="#425965"/>
-<text x="485" y="154" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="442" y="170" width="86" height="27" rx="5" fill="#425965"/>
-<text x="485" y="188" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="442" y="204" width="86" height="27" rx="5" fill="#425965"/>
-<text x="485" y="222" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="442" y="238" width="86" height="27" rx="5" fill="#425965"/>
-<text x="485" y="256" font-size="12" fill="#eef0f3">Clip</text>
-<text x="579" y="124" font-size="13" fill="#eef0f3">Track 5</text>
-<rect x="536" y="136" width="86" height="27" rx="5" fill="#425965"/>
-<text x="579" y="154" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="536" y="170" width="86" height="27" rx="5" fill="#425965"/>
-<text x="579" y="188" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="536" y="204" width="86" height="27" rx="5" fill="#425965"/>
-<text x="579" y="222" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="536" y="238" width="86" height="27" rx="5" fill="#425965"/>
-<text x="579" y="256" font-size="12" fill="#eef0f3">Clip</text>
-<text x="673" y="124" font-size="13" fill="#eef0f3">Track 6</text>
-<rect x="630" y="136" width="86" height="27" rx="5" fill="#425965"/>
-<text x="673" y="154" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="630" y="170" width="86" height="27" rx="5" fill="#425965"/>
-<text x="673" y="188" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="630" y="204" width="86" height="27" rx="5" fill="#425965"/>
-<text x="673" y="222" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="630" y="238" width="86" height="27" rx="5" fill="#425965"/>
-<text x="673" y="256" font-size="12" fill="#eef0f3">Clip</text>
-<text x="767" y="124" font-size="13" fill="#eef0f3">Track 7</text>
-<rect x="724" y="136" width="86" height="27" rx="5" fill="#425965"/>
-<text x="767" y="154" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="724" y="170" width="86" height="27" rx="5" fill="#425965"/>
-<text x="767" y="188" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="724" y="204" width="86" height="27" rx="5" fill="#425965"/>
-<text x="767" y="222" font-size="12" fill="#eef0f3">Clip</text>
-<rect x="724" y="238" width="86" height="27" rx="5" fill="#425965"/>
-<text x="767" y="256" font-size="12" fill="#eef0f3">Clip</text>
-<text x="861" y="124" font-size="13" fill="#eef0f3">Scenes</text>
-<rect x="818" y="136" width="86" height="27" rx="5" fill="#367852"/>
-<text x="861" y="154" font-size="12" fill="#eef0f3">Launch 1</text>
-<rect x="818" y="170" width="86" height="27" rx="5" fill="#367852"/>
-<text x="861" y="188" font-size="12" fill="#eef0f3">Launch 2</text>
-<rect x="818" y="204" width="86" height="27" rx="5" fill="#367852"/>
-<text x="861" y="222" font-size="12" fill="#eef0f3">Launch 3</text>
-<rect x="818" y="238" width="86" height="27" rx="5" fill="#367852"/>
-<text x="861" y="256" font-size="12" fill="#eef0f3">Launch 4</text>
-<rect x="32" y="136" width="42" height="27" rx="5" fill="#33373e"/>
-<rect x="32" y="170" width="42" height="27" rx="5" fill="#33373e"/>
-<rect x="32" y="204" width="42" height="27" rx="5" fill="#33373e"/>
-<rect x="32" y="238" width="42" height="27" rx="5" fill="#33373e"/>
-<text x="83" y="288" font-size="12" fill="#eef0f3">Track keys off</text>
-<rect x="160" y="284" width="39" height="26" rx="5" fill="#454d59"/>
-<text x="179.5" y="302" font-size="12" fill="#eef0f3">1</text>
-<text x="179.5" y="326" font-size="11" fill="#eef0f3">1</text>
-<rect x="207" y="284" width="39" height="26" rx="5" fill="#653d47"/>
-<text x="226.5" y="302" font-size="12" fill="#eef0f3">2</text>
-<text x="226.5" y="326" font-size="11" fill="#eef0f3">Stop</text>
-<rect x="254" y="284" width="39" height="26" rx="5" fill="#454d59"/>
-<text x="273.5" y="302" font-size="12" fill="#eef0f3">3</text>
-<text x="273.5" y="326" font-size="11" fill="#eef0f3">2</text>
-<rect x="301" y="284" width="39" height="26" rx="5" fill="#653d47"/>
-<text x="320.5" y="302" font-size="12" fill="#eef0f3">4</text>
-<text x="320.5" y="326" font-size="11" fill="#eef0f3">Stop</text>
-<rect x="348" y="284" width="39" height="26" rx="5" fill="#454d59"/>
-<text x="367.5" y="302" font-size="12" fill="#eef0f3">5</text>
-<text x="367.5" y="326" font-size="11" fill="#eef0f3">3</text>
-<rect x="395" y="284" width="39" height="26" rx="5" fill="#653d47"/>
-<text x="414.5" y="302" font-size="12" fill="#eef0f3">6</text>
-<text x="414.5" y="326" font-size="11" fill="#eef0f3">Stop</text>
-<rect x="442" y="284" width="39" height="26" rx="5" fill="#454d59"/>
-<text x="461.5" y="302" font-size="12" fill="#eef0f3">7</text>
-<text x="461.5" y="326" font-size="11" fill="#eef0f3">4</text>
-<rect x="489" y="284" width="39" height="26" rx="5" fill="#653d47"/>
-<text x="508.5" y="302" font-size="12" fill="#eef0f3">8</text>
-<text x="508.5" y="326" font-size="11" fill="#eef0f3">Stop</text>
-<rect x="536" y="284" width="39" height="26" rx="5" fill="#454d59"/>
-<text x="555.5" y="302" font-size="12" fill="#eef0f3">9</text>
-<text x="555.5" y="326" font-size="11" fill="#eef0f3">5</text>
-<rect x="583" y="284" width="39" height="26" rx="5" fill="#653d47"/>
-<text x="602.5" y="302" font-size="12" fill="#eef0f3">10</text>
-<text x="602.5" y="326" font-size="11" fill="#eef0f3">Stop</text>
-<rect x="630" y="284" width="39" height="26" rx="5" fill="#454d59"/>
-<text x="649.5" y="302" font-size="12" fill="#eef0f3">11</text>
-<text x="649.5" y="326" font-size="11" fill="#eef0f3">6</text>
-<rect x="677" y="284" width="39" height="26" rx="5" fill="#653d47"/>
-<text x="696.5" y="302" font-size="12" fill="#eef0f3">12</text>
-<text x="696.5" y="326" font-size="11" fill="#eef0f3">Stop</text>
-<rect x="724" y="284" width="39" height="26" rx="5" fill="#454d59"/>
-<text x="743.5" y="302" font-size="12" fill="#eef0f3">13</text>
-<text x="743.5" y="326" font-size="11" fill="#eef0f3">7</text>
-<rect x="771" y="284" width="39" height="26" rx="5" fill="#653d47"/>
-<text x="790.5" y="302" font-size="12" fill="#eef0f3">14</text>
-<text x="790.5" y="326" font-size="11" fill="#eef0f3">Stop</text>
-<rect x="818" y="284" width="39" height="26" rx="5" fill="#454d59"/>
-<text x="837.5" y="302" font-size="12" fill="#eef0f3">15</text>
-<text x="837.5" y="326" font-size="11" fill="#eef0f3">Main</text>
-<rect x="865" y="284" width="39" height="26" rx="5" fill="#653d47"/>
-<text x="884.5" y="302" font-size="12" fill="#eef0f3">16</text>
-<text x="884.5" y="326" font-size="11" fill="#eef0f3">All</text>
-<text x="536" y="350" font-size="14" fill="#eef0f3">Odd steps select · Even steps stop · Shift + scene stops that scene</text>
-<text x="480" y="395" font-size="20" fill="#eef0f3">Drums</text>
-<rect x="32" y="425" width="42" height="31" rx="5" fill="#5a6472"/>
-<text x="53" y="446" font-size="13" fill="#eef0f3">1</text>
-<rect x="160" y="425" width="86" height="31" rx="5" fill="#416459"/>
-<text x="203" y="445" font-size="11" fill="#eef0f3">Drum</text>
-<rect x="254" y="425" width="86" height="31" rx="5" fill="#416459"/>
-<text x="297" y="445" font-size="11" fill="#eef0f3">Drum</text>
-<rect x="348" y="425" width="86" height="31" rx="5" fill="#416459"/>
-<text x="391" y="445" font-size="11" fill="#eef0f3">Drum</text>
-<rect x="442" y="425" width="86" height="31" rx="5" fill="#416459"/>
-<text x="485" y="445" font-size="11" fill="#eef0f3">Drum</text>
-<rect x="536" y="425" width="86" height="31" rx="5" fill="#55516c"/>
-<text x="579" y="445" font-size="11" fill="#eef0f3">Velocity</text>
-<rect x="630" y="425" width="86" height="31" rx="5" fill="#55516c"/>
-<text x="673" y="445" font-size="11" fill="#eef0f3">Length</text>
-<rect x="724" y="425" width="86" height="31" rx="5" fill="#55516c"/>
-<text x="767" y="445" font-size="11" fill="#eef0f3">Chance</text>
-<rect x="818" y="425" width="86" height="31" rx="5" fill="#55516c"/>
-<text x="861" y="445" font-size="11" fill="#eef0f3">Repeat</text>
-<rect x="32" y="464" width="42" height="31" rx="5" fill="#5a6472"/>
-<text x="53" y="446" font-size="13" fill="#eef0f3">2</text>
-<rect x="160" y="464" width="86" height="31" rx="5" fill="#416459"/>
-<text x="203" y="484" font-size="11" fill="#eef0f3">Drum</text>
-<rect x="254" y="464" width="86" height="31" rx="5" fill="#416459"/>
-<text x="297" y="484" font-size="11" fill="#eef0f3">Drum</text>
-<rect x="348" y="464" width="86" height="31" rx="5" fill="#416459"/>
-<text x="391" y="484" font-size="11" fill="#eef0f3">Drum</text>
-<rect x="442" y="464" width="86" height="31" rx="5" fill="#416459"/>
-<text x="485" y="484" font-size="11" fill="#eef0f3">Drum</text>
-<rect x="536" y="464" width="86" height="31" rx="5" fill="#55516c"/>
-<text x="579" y="484" font-size="11" fill="#eef0f3">Condition</text>
-<rect x="630" y="464" width="86" height="31" rx="5" fill="#55516c"/>
-<text x="673" y="484" font-size="11" fill="#eef0f3">Every N</text>
-<rect x="724" y="464" width="86" height="31" rx="5" fill="#55516c"/>
-<text x="767" y="484" font-size="11" fill="#eef0f3">Vel spread</text>
-<rect x="818" y="464" width="86" height="31" rx="5" fill="#55516c"/>
-<text x="861" y="484" font-size="11" fill="#eef0f3">Transpose</text>
-<rect x="32" y="503" width="42" height="31" rx="5" fill="#5a6472"/>
-<text x="53" y="446" font-size="13" fill="#eef0f3">3</text>
-<rect x="160" y="503" width="86" height="31" rx="5" fill="#416459"/>
-<text x="203" y="523" font-size="11" fill="#eef0f3">Drum</text>
-<rect x="254" y="503" width="86" height="31" rx="5" fill="#416459"/>
-<text x="297" y="523" font-size="11" fill="#eef0f3">Drum</text>
-<rect x="348" y="503" width="86" height="31" rx="5" fill="#416459"/>
-<text x="391" y="523" font-size="11" fill="#eef0f3">Drum</text>
-<rect x="442" y="503" width="86" height="31" rx="5" fill="#416459"/>
-<text x="485" y="523" font-size="11" fill="#eef0f3">Drum</text>
-<rect x="536" y="503" width="86" height="31" rx="5" fill="#55516c"/>
-<text x="579" y="523" font-size="11" fill="#eef0f3">Pan</text>
-<rect x="630" y="503" width="86" height="31" rx="5" fill="#55516c"/>
-<text x="673" y="523" font-size="11" fill="#eef0f3">Gain</text>
-<rect x="724" y="503" width="86" height="31" rx="5" fill="#55516c"/>
-<text x="767" y="523" font-size="11" fill="#eef0f3">Timbre</text>
-<rect x="818" y="503" width="86" height="31" rx="5" fill="#55516c"/>
-<text x="861" y="523" font-size="11" fill="#eef0f3">Pressure</text>
-<rect x="32" y="542" width="42" height="31" rx="5" fill="#5a6472"/>
-<text x="53" y="446" font-size="13" fill="#eef0f3">4</text>
-<rect x="160" y="542" width="86" height="31" rx="5" fill="#416459"/>
-<text x="203" y="562" font-size="11" fill="#eef0f3">Drum</text>
-<rect x="254" y="542" width="86" height="31" rx="5" fill="#416459"/>
-<text x="297" y="562" font-size="11" fill="#eef0f3">Drum</text>
-<rect x="348" y="542" width="86" height="31" rx="5" fill="#416459"/>
-<text x="391" y="562" font-size="11" fill="#eef0f3">Drum</text>
-<rect x="442" y="542" width="86" height="31" rx="5" fill="#416459"/>
-<text x="485" y="562" font-size="11" fill="#eef0f3">Drum</text>
-<rect x="536" y="542" width="86" height="31" rx="5" fill="#55516c"/>
-<text x="579" y="562" font-size="11" fill="#eef0f3">Release vel</text>
-<rect x="630" y="542" width="86" height="31" rx="5" fill="#55516c"/>
-<text x="673" y="562" font-size="11" fill="#eef0f3">Rpt vel end</text>
-<rect x="724" y="542" width="86" height="31" rx="5" fill="#55516c"/>
-<text x="767" y="562" font-size="11" fill="#eef0f3">Rpt curve</text>
-<rect x="818" y="542" width="86" height="31" rx="5" fill="#55516c"/>
-<text x="861" y="562" font-size="11" fill="#eef0f3">Rpt vel curve</text>
-<text x="77" y="609" font-size="12" fill="#eef0f3">Track keys 1–4</text>
-<text x="345" y="603" font-size="14" fill="#eef0f3">Play / select drums</text>
-<text x="725" y="603" font-size="13" fill="#eef0f3">Hold modifier + wheel, then press a step</text>
-<text x="536" y="633" font-size="15" fill="#eef0f3">Bottom row: 16 steps for the selected note or drum</text>
-<text x="480" y="669" font-size="14" fill="#eef0f3">Melodic Note: all 32 pads play notes · Left / Right: phrase pages · Hold Loop: length</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1460" height="1320" viewBox="0 0 1460 1320" role="img" aria-labelledby="title desc">
+<title id="title">Move Bitwig controller — control reference</title>
+<desc id="desc">Move top panel with its display, wheel, eight parameter knobs, Volume, four track keys, 32 pads, 16 steps, Back, Menu, transport, modifiers and navigation. Button symbols match the physical controller. Six reference cards cover starting a song, notes and drums, Session, devices, modifiers, volume and Mixer.</desc>
+<rect width="1460" height="1320" fill="#fafafa"/>
+<g font-family="Segoe UI, Arial, sans-serif" fill="#262626">
+<text x="34" y="43" font-size="22" fill="#262626" text-anchor="start" font-weight="500">Move Bitwig</text>
+<text x="1426" y="43" font-size="20" fill="#666666" text-anchor="end" font-weight="400">Control reference</text>
+<g transform="translate(-270 -80) scale(2)">
+<rect x="256" y="96" width="487.8" height="227.7" rx="6" fill="#f6f6f6" stroke="#999999"/>
+<rect x="267.25" y="110.4" width="52.65" height="27" rx="1.5" fill="#e3e3e3" stroke="#999999"/>
+<circle cx="292.45" cy="179.7" r="20.25" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="365.8" cy="118.95" r="8.55" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="407.07" cy="118.95" r="8.55" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="448.34" cy="118.95" r="8.55" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="489.61" cy="118.95" r="8.55" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="530.88" cy="118.95" r="8.55" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="572.15" cy="118.95" r="8.55" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="613.42" cy="118.95" r="8.55" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="654.69" cy="118.95" r="8.55" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="720.85" cy="121.65" r="11.25" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<rect x="326.65" y="150.9" width="11.7" height="26.1" rx="5.85" fill="#eeeeee" stroke="#999999"/>
+<rect x="348.25" y="151.35" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="389.52" y="151.35" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="430.79" y="151.35" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="472.06" y="151.35" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="513.33" y="151.35" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="554.6" y="151.35" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="595.87" y="151.35" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="637.14" y="151.35" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="326.65" y="182.4" width="11.7" height="26.1" rx="5.85" fill="#eeeeee" stroke="#999999"/>
+<rect x="348.25" y="182.85" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="389.52" y="182.85" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="430.79" y="182.85" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="472.06" y="182.85" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="513.33" y="182.85" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="554.6" y="182.85" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="595.87" y="182.85" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="637.14" y="182.85" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="326.65" y="213.9" width="11.7" height="26.1" rx="5.85" fill="#eeeeee" stroke="#999999"/>
+<rect x="348.25" y="214.35" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="389.52" y="214.35" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="430.79" y="214.35" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="472.06" y="214.35" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="513.33" y="214.35" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="554.6" y="214.35" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="595.87" y="214.35" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="637.14" y="214.35" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="326.65" y="245.4" width="11.7" height="26.1" rx="5.85" fill="#eeeeee" stroke="#999999"/>
+<rect x="348.25" y="245.85" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="389.52" y="245.85" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="430.79" y="245.85" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="472.06" y="245.85" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="513.33" y="245.85" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="554.6" y="245.85" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="595.87" y="245.85" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<rect x="637.14" y="245.85" width="35.1" height="25.2" rx="1.5" fill="#eaeaea" stroke="#999999"/>
+<circle cx="355.45" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="376.06" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="396.66" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="417.28" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="437.89" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="458.5" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="479.11" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="499.71" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="520.32" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="540.94" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="561.55" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="582.16" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="602.77" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="623.38" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="643.99" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="664.59" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="278.5" cy="226.95" r="10.58" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="306.4" cy="226.95" r="10.58" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="278.5" cy="295.35" r="10.58" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="306.4" cy="295.35" r="10.58" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="692.95" cy="163.95" r="10.58" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="720.85" cy="163.95" r="10.58" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="692.95" cy="195.45" r="10.58" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="720.85" cy="195.45" r="10.58" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="692.95" cy="226.95" r="10.58" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="720.85" cy="226.95" r="10.58" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="692.95" cy="258.45" r="10.58" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="720.85" cy="258.45" r="10.58" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="689.35" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="724.9" cy="295.35" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="706.9" cy="285.9" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<circle cx="706.9" cy="304.8" r="7.2" fill="#f0f0f0" stroke="#777777" stroke-width="1.2"/>
+<!-- Original Move button symbols from the supplied top-panel drawing. -->
+<g fill="none" stroke="#555555" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+<polyline points="280,223.45 276.5,226.95 280,230.45"/>
+<line x1="302.9" y1="224.35" x2="309.9" y2="224.35"/>
+<line x1="302.9" y1="226.95" x2="309.9" y2="226.95"/>
+<line x1="302.9" y1="229.55" x2="309.9" y2="229.55"/>
+<polygon points="276,291.35 282.5,295.35 276,299.35"/>
+<circle cx="306.4" cy="295.35" r="4.2"/>
+<polyline points="688.95,161.75 688.95,159.95 690.75,159.95"/>
+<polyline points="688.95,166.15 688.95,167.95 690.75,167.95"/>
+<polyline points="696.95,161.75 696.95,159.95 695.15,159.95"/>
+<polyline points="696.95,166.15 696.95,167.95 695.15,167.95"/>
+<circle cx="720.85" cy="163.95" r="2" fill="#555555"/>
+<path d="M691.95,198.45 H690.95 a3,3 0 0 1 0,-6 h4 a3,3 0 0 1 0,6 h-1"/>
+<polyline points="693.35,196.85 691.95,198.45 693.35,200.05"/>
+<polyline points="717.65,198.95 717.65,191.95 720.85,195.95 724.05,191.95 724.05,198.95"/>
+<path d="M689.75,223.75 L696.15,230.15 M696.15,223.75 L689.75,230.15"/>
+<rect x="717.05" y="226.15" width="4.6" height="4.6"/>
+<polyline points="719.65,223.15 724.65,223.15 724.65,228.15"/>
+<path d="M689.45,256.95 H693.95 a2.6,2.6 0 0 1 0,5.2 H692.45"/>
+<polyline points="691.45,254.95 689.45,256.95 691.45,258.95"/>
+<circle cx="717.85" cy="258.45" r="0.9" fill="#555555"/>
+<circle cx="720.85" cy="258.45" r="0.9" fill="#555555"/>
+<circle cx="723.85" cy="258.45" r="0.9" fill="#555555"/>
+<polyline points="690.35,292.75 687.75,295.35 690.35,297.95"/>
+<polyline points="723.9,292.75 726.5,295.35 723.9,297.95"/>
+<path d="M704.1,285.9 H709.7 M706.9,283.1 V288.7"/>
+<path d="M704.1,304.8 H709.7"/>
+</g>
+<circle cx="365.8" cy="136.95" r="1.3" fill="#888888"/>
+<circle cx="407.07" cy="136.95" r="1.3" fill="#888888"/>
+<circle cx="448.33" cy="136.95" r="1.3" fill="#888888"/>
+<circle cx="489.6" cy="136.95" r="1.3" fill="#888888"/>
+<circle cx="530.9" cy="136.95" r="1.3" fill="#888888"/>
+<circle cx="572.17" cy="136.95" r="1.3" fill="#888888"/>
+<circle cx="613.43" cy="136.95" r="1.3" fill="#888888"/>
+<circle cx="654.7" cy="136.95" r="1.3" fill="#888888"/>
+<line x1="332.5" y1="156.3" x2="332.5" y2="171.6" stroke="#666666" stroke-width="1.6"/>
+<line x1="332.5" y1="187.8" x2="332.5" y2="203.1" stroke="#666666" stroke-width="1.6"/>
+<line x1="332.5" y1="219.3" x2="332.5" y2="234.6" stroke="#666666" stroke-width="1.6"/>
+<line x1="332.5" y1="250.8" x2="332.5" y2="266.1" stroke="#666666" stroke-width="1.6"/>
+<circle cx="355.45" cy="294.9" r="1" fill="#666666"/>
+<line x1="353.20" y1="298.5" x2="357.70" y2="298.5" stroke="#666666" stroke-width="0.9"/>
+<circle cx="376.06" cy="294.9" r="1" fill="#666666"/>
+<circle cx="396.67" cy="294.9" r="1" fill="#666666"/>
+<circle cx="417.28" cy="294.9" r="1" fill="#666666"/>
+<circle cx="437.89" cy="294.9" r="1" fill="#666666"/>
+<line x1="435.64" y1="298.5" x2="440.14" y2="298.5" stroke="#666666" stroke-width="0.9"/>
+<circle cx="458.50" cy="294.9" r="1" fill="#666666"/>
+<circle cx="479.11" cy="294.9" r="1" fill="#666666"/>
+<circle cx="499.72" cy="294.9" r="1" fill="#666666"/>
+<circle cx="520.33" cy="294.9" r="1" fill="#666666"/>
+<line x1="518.08" y1="298.5" x2="522.58" y2="298.5" stroke="#666666" stroke-width="0.9"/>
+<circle cx="540.94" cy="294.9" r="1" fill="#666666"/>
+<circle cx="561.55" cy="294.9" r="1" fill="#666666"/>
+<circle cx="582.16" cy="294.9" r="1" fill="#666666"/>
+<circle cx="602.77" cy="294.9" r="1" fill="#666666"/>
+<line x1="600.52" y1="298.5" x2="605.02" y2="298.5" stroke="#666666" stroke-width="0.9"/>
+<circle cx="623.38" cy="294.9" r="1" fill="#666666"/>
+<circle cx="643.99" cy="294.9" r="1" fill="#666666"/>
+<circle cx="664.60" cy="294.9" r="1" fill="#666666"/>
+</g>
+<text x="750" y="85" font-size="19" fill="#262626" text-anchor="middle" font-weight="400">Knobs 1–8 · device parameters</text>
+<polyline points="444,107 444,96 1056,96 1056,107" fill="none" stroke="#aaaaaa" stroke-width="1.4"/>
+<text x="1240" y="133" font-size="20" fill="#262626" text-anchor="start" font-weight="500">Volume</text>
+<text x="1240" y="158" font-size="16" fill="#666666" text-anchor="start" font-weight="400">Main / last touched</text>
+<polyline points="1195,163 1227,140" fill="none" stroke="#aaaaaa" stroke-width="1.4"/>
+<text x="1240" y="252" font-size="18" fill="#262626" text-anchor="start" font-weight="500">Capture · Sample</text>
+<text x="1240" y="275" font-size="15" fill="#666666" text-anchor="start" font-weight="400">Devices · track arm</text>
+<polyline points="1195,248 1227,248" fill="none" stroke="#aaaaaa" stroke-width="1.4"/>
+<text x="1240" y="315" font-size="18" fill="#262626" text-anchor="start" font-weight="500">Loop · Mute</text>
+<text x="1240" y="338" font-size="15" fill="#666666" text-anchor="start" font-weight="400">Loop edits · mute / solo</text>
+<polyline points="1195,311 1227,311" fill="none" stroke="#aaaaaa" stroke-width="1.4"/>
+<text x="1240" y="378" font-size="18" fill="#262626" text-anchor="start" font-weight="500">Delete · Copy</text>
+<text x="1240" y="401" font-size="15" fill="#666666" text-anchor="start" font-weight="400">Hold with an item</text>
+<polyline points="1195,374 1227,374" fill="none" stroke="#aaaaaa" stroke-width="1.4"/>
+<text x="1240" y="441" font-size="18" fill="#262626" text-anchor="start" font-weight="500">Undo · Shift</text>
+<text x="1240" y="464" font-size="15" fill="#666666" text-anchor="start" font-weight="400">Undo / redo · shortcuts</text>
+<polyline points="1195,437 1227,437" fill="none" stroke="#aaaaaa" stroke-width="1.4"/>
+<text x="1240" y="516" font-size="18" fill="#262626" text-anchor="start" font-weight="500">Arrows · + / −</text>
+<text x="1240" y="539" font-size="15" fill="#666666" text-anchor="start" font-weight="400">Navigate pages / pitch</text>
+<polyline points="1195,512 1227,512" fill="none" stroke="#aaaaaa" stroke-width="1.4"/>
+<text x="220" y="157" font-size="20" fill="#262626" text-anchor="end" font-weight="500">Display</text>
+<text x="220" y="180" font-size="16" fill="#666666" text-anchor="end" font-weight="400">Context and values</text>
+<polyline points="232,152 264,168" fill="none" stroke="#aaaaaa" stroke-width="1.4"/>
+<text x="220" y="266" font-size="20" fill="#262626" text-anchor="end" font-weight="500">Wheel</text>
+<text x="220" y="289" font-size="16" fill="#666666" text-anchor="end" font-weight="400">Devices / edit / browse</text>
+<polyline points="232,261 274,279" fill="none" stroke="#aaaaaa" stroke-width="1.4"/>
+<text x="220" y="365" font-size="20" fill="#262626" text-anchor="end" font-weight="500">Back · Menu</text>
+<text x="220" y="388" font-size="16" fill="#666666" text-anchor="end" font-weight="400">Close / cancel · views</text>
+<polyline points="232,360 266,374" fill="none" stroke="#aaaaaa" stroke-width="1.4"/>
+<text x="220" y="440" font-size="20" fill="#262626" text-anchor="end" font-weight="500">Track keys 1–4</text>
+<text x="220" y="463" font-size="16" fill="#666666" text-anchor="end" font-weight="400">Select in Note / Mixer</text>
+<polyline points="232,435 381,437" fill="none" stroke="#aaaaaa" stroke-width="1.4"/>
+<text x="220" y="513" font-size="20" fill="#262626" text-anchor="end" font-weight="500">Play · Record</text>
+<text x="220" y="536" font-size="16" fill="#666666" text-anchor="end" font-weight="400">Transport / recording</text>
+<polyline points="232,508 266,511" fill="none" stroke="#aaaaaa" stroke-width="1.4"/>
+<text x="750" y="484" font-size="15" fill="#666666" text-anchor="middle" font-weight="400">32 pads · notes, drums, clips and scenes</text>
+<text x="750" y="591" font-size="18" fill="#262626" text-anchor="middle" font-weight="400">Steps 1–16 · sequence notes in Note · select / stop tracks in Session</text>
+<g>
+<rect x="34" y="620" width="436" height="322" rx="7" fill="#f6f6f6" stroke="#dddddd"/>
+<text x="54" y="654" font-size="21" font-weight="500" fill="#262626">Start a song</text>
+<text x="54" y="690" font-size="17" font-weight="500" fill="#262626">Shift + Step 1 / 2</text>
+<text x="54" y="711" font-size="16" fill="#666666">New instrument + browser / new audio track</text>
+<text x="54" y="740" font-size="17" font-weight="500" fill="#262626">Browser: wheel / click / Back</text>
+<text x="54" y="761" font-size="16" fill="#666666">Choose a sound / load it / cancel</text>
+<text x="54" y="790" font-size="17" font-weight="500" fill="#262626">Play a pad, then tap steps</text>
+<text x="54" y="811" font-size="16" fill="#666666">Build a phrase; first step creates a missing clip</text>
+<text x="54" y="840" font-size="17" font-weight="500" fill="#262626">Menu / Shift + Menu</text>
+<text x="54" y="861" font-size="16" fill="#666666">Switch Session ↔ Note / open Mixer</text>
+<text x="54" y="890" font-size="17" font-weight="500" fill="#262626">Note: track keys 1–4</text>
+<text x="54" y="911" font-size="16" fill="#666666">Select track; sequencer follows its clip</text>
+</g>
+<g>
+<rect x="512" y="620" width="436" height="322" rx="7" fill="#f6f6f6" stroke="#dddddd"/>
+<text x="532" y="654" font-size="21" font-weight="500" fill="#262626">Notes &amp; drums</text>
+<text x="532" y="690" font-size="17" font-weight="500" fill="#262626">Melodic: all pads · drums: left 4 × 4</text>
+<text x="532" y="711" font-size="16" fill="#666666">Play notes; tap steps to add / remove a note</text>
+<text x="532" y="740" font-size="17" font-weight="500" fill="#262626">Drums: right 4 × 4</text>
+<text x="532" y="761" font-size="16" fill="#666666">Note modifiers: velocity, chance, repeat, more</text>
+<text x="532" y="790" font-size="17" font-weight="500" fill="#262626">Hold modifier + wheel, then press step</text>
+<text x="532" y="811" font-size="16" fill="#666666">Set a modifier and apply it to that step</text>
+<text x="532" y="840" font-size="17" font-weight="500" fill="#262626">Hold step + Volume / wheel</text>
+<text x="532" y="861" font-size="16" fill="#666666">Edit note velocity / length</text>
+<text x="532" y="890" font-size="17" font-weight="500" fill="#262626">Left / Right · + / −</text>
+<text x="532" y="911" font-size="16" fill="#666666">Phrase pages · octave or drum bank</text>
+</g>
+<g>
+<rect x="990" y="620" width="436" height="322" rx="7" fill="#f6f6f6" stroke="#dddddd"/>
+<text x="1010" y="654" font-size="21" font-weight="500" fill="#262626">Session</text>
+<text x="1010" y="690" font-size="17" font-weight="500" fill="#262626">Pad columns 1–7 / column 8</text>
+<text x="1010" y="711" font-size="16" fill="#666666">Launch clips / scenes; Shift + scene stops it</text>
+<text x="1010" y="740" font-size="17" font-weight="500" fill="#262626">Shift + clip pad</text>
+<text x="1010" y="761" font-size="16" fill="#666666">Select a clip for editing without launching</text>
+<text x="1010" y="790" font-size="17" font-weight="500" fill="#262626">Steps 1–14: odd / even</text>
+<text x="1010" y="811" font-size="16" fill="#666666">Select track / stop that track’s clips</text>
+<text x="1010" y="840" font-size="17" font-weight="500" fill="#262626">Step 15 / Step 16</text>
+<text x="1010" y="861" font-size="16" fill="#666666">Select Main / stop all clips</text>
+<text x="1010" y="890" font-size="17" font-weight="500" fill="#262626">Left / Right · + / −</text>
+<text x="1010" y="911" font-size="16" fill="#666666">Scroll tracks · scroll scenes</text>
+</g>
+<g>
+<rect x="34" y="964" width="436" height="322" rx="7" fill="#f6f6f6" stroke="#dddddd"/>
+<text x="54" y="998" font-size="21" font-weight="500" fill="#262626">Instruments &amp; effects</text>
+<text x="54" y="1034" font-size="17" font-weight="500" fill="#262626">Capture + wheel or Left / Right</text>
+<text x="54" y="1055" font-size="16" fill="#666666">Select the previous / next device</text>
+<text x="54" y="1084" font-size="17" font-weight="500" fill="#262626">Capture + wheel click</text>
+<text x="54" y="1105" font-size="16" fill="#666666">Browse the focused device’s presets</text>
+<text x="54" y="1134" font-size="17" font-weight="500" fill="#262626">Capture + Shift + wheel click</text>
+<text x="54" y="1155" font-size="16" fill="#666666">Add a device after the selected device</text>
+<text x="54" y="1184" font-size="17" font-weight="500" fill="#262626">Knobs 1–8 · Shift + knob</text>
+<text x="54" y="1205" font-size="16" fill="#666666">Adjust remote parameters · fine adjustment</text>
+<text x="54" y="1234" font-size="17" font-weight="500" fill="#262626">Shift + Left / Right</text>
+<text x="54" y="1255" font-size="16" fill="#666666">Change the remote-parameter page</text>
+</g>
+<g>
+<rect x="512" y="964" width="436" height="322" rx="7" fill="#f6f6f6" stroke="#dddddd"/>
+<text x="532" y="998" font-size="21" font-weight="500" fill="#262626">Modifiers &amp; transport</text>
+<text x="532" y="1034" font-size="17" font-weight="500" fill="#262626">Play / Record</text>
+<text x="532" y="1055" font-size="16" fill="#666666">Start or stop / overdub in Note, record elsewhere</text>
+<text x="532" y="1084" font-size="17" font-weight="500" fill="#262626">Sample · Undo / Shift + Undo</text>
+<text x="532" y="1105" font-size="16" fill="#666666">Arm selected track · undo / redo</text>
+<text x="532" y="1134" font-size="17" font-weight="500" fill="#262626">Mute + track / drum · Shift + Mute tap</text>
+<text x="532" y="1155" font-size="16" fill="#666666">Mute a track / drum · solo selected track</text>
+<text x="532" y="1184" font-size="17" font-weight="500" fill="#262626">Delete / Copy + track or clip</text>
+<text x="532" y="1205" font-size="16" fill="#666666">Delete / duplicate tracks; delete / copy clips</text>
+<text x="532" y="1234" font-size="17" font-weight="500" fill="#262626">Hold Loop + wheel</text>
+<text x="532" y="1255" font-size="16" fill="#666666">Change clip length; Shift makes fine edits</text>
+</g>
+<g>
+<rect x="990" y="964" width="436" height="322" rx="7" fill="#f6f6f6" stroke="#dddddd"/>
+<text x="1010" y="998" font-size="21" font-weight="500" fill="#262626">Volume, Mixer &amp; settings</text>
+<text x="1010" y="1034" font-size="17" font-weight="500" fill="#262626">Volume: Main or last touched</text>
+<text x="1010" y="1055" font-size="16" fill="#666666">Choose in Bitwig’s controller settings</text>
+<text x="1010" y="1084" font-size="17" font-weight="500" fill="#262626">Hold track key / drum pad + Volume</text>
+<text x="1010" y="1105" font-size="16" fill="#666666">Adjust that track / drum chain’s volume</text>
+<text x="1010" y="1134" font-size="17" font-weight="500" fill="#262626">Mixer: knobs 1–7 / 8</text>
+<text x="1010" y="1155" font-size="16" fill="#666666">Track levels / Main; hold Mute for pan</text>
+<text x="1010" y="1184" font-size="17" font-weight="500" fill="#262626">Shift + Step 3 / 9</text>
+<text x="1010" y="1205" font-size="16" fill="#666666">Workflow settings / Key &amp; Scale in Note</text>
+<text x="1010" y="1234" font-size="17" font-weight="500" fill="#262626">Shift + Step 15 / 16</text>
+<text x="1010" y="1255" font-size="16" fill="#666666">Double clip content / quantize clip</text>
+</g>
 </g></svg>
