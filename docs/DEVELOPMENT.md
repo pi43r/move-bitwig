@@ -60,6 +60,18 @@ Capability bit 0 enables the bar overview; bit 1 enables labels up to 48 charact
 
 Bitwig pings every second. Link timeout clears feedback, and the module announces readiness on launch so the controller resends its state. LED updates are coalesced by destination and paced within a 12-packet tick budget. Rendering is dirty-driven, with local animation for mode announcements, playback, and scrolling names.
 
+## Schwung compatibility
+
+The supported minimum is **Schwung 1.0.0**. This is a conservative source-verified baseline, not a claim that every older version fails. The published `v1.0.0` sources include:
+
+- Takeover SysEx forwarding in [`src/schwung_shim.c`](https://github.com/charlesvestal/schwung/blob/v1.0.0/src/schwung_shim.c).
+- MIDI send bindings and `shadow_set_overtake_suppress_master_volume` in [`src/shadow/shadow_ui.c`](https://github.com/charlesvestal/schwung/blob/v1.0.0/src/shadow/shadow_ui.c).
+- The shared constants/input-filter modules and discovery of module `help.json` files.
+
+The Volume hook is feature-detected at runtime, but the supported baseline includes it so the native volume overlay does not interrupt the controller screen. The maintainer has tested the current setup and repository-link installation; older host versions have not been hardware-tested as part of this compatibility review.
+
+Schwung Manager currently displays a hard-coded `0.1.0` minimum for an installed module absent from its catalog. That fallback is not a compatibility declaration from this module. The Move Bitwig catalog entry sets `min_host_version` to `1.0.0` and links the separately required Bitwig controller ZIP. The UI-only module's `api_version: 1` is a different setting from the host release version.
+
 ## Schwung help
 
 `src/help.json` provides on-device setup and control topics. Schwung discovers the file from the installed module directory under **Global Settings → System → Help → Modules → Move Bitwig**. Its root must have a non-empty `children` array. Topics use `title` and `lines`; keep text ASCII and at most 20 characters per line for the 128×64 display.

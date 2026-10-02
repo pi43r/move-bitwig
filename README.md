@@ -12,7 +12,7 @@ Turn **Ableton Move** into a groovebox for **Bitwig Studio**: choose a sound, pl
 
 ## Set up
 
-You need **Bitwig Studio 6**, an Ableton Move with [Schwung](https://github.com/charlesvestal/schwung) installed, and a USB-C data connection from Move to your computer.
+You need **Bitwig Studio 6**, an Ableton Move with [Schwung 1.0.0 or newer](https://github.com/charlesvestal/schwung) installed, and a USB-C data connection from Move to your computer.
 
 1. Download **both files** from the [latest release](https://github.com/pi43r/move-bitwig/releases/latest):
    - `move-bitwig-module.tar.gz` for Move.
